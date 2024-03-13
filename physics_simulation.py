@@ -104,7 +104,7 @@ def get_entity_stats(t, entity_stats, stat_list):
     if orbital_stats == -2:
         orbital_stats = get_entity_stats(t, search_entity_list(orb_id, initial_pos), stat_list)
 
-    coords = calc_orbit_position(orbital_stats["x"], orbital_stats["y"], entity_stats["radius"], entity_stats["period"], t)
+    coords = calc_orbit_position(orbital_stats["x"], orbital_stats["y"], entity_stats["or"], entity_stats["period"], t)
 
     return {
         "id": entity_stats["id"],
@@ -141,6 +141,3 @@ def get_stats(t):
             stats.append(entity_stats)
 
     return stats
-
-# testing
-print(get_stats(2))
