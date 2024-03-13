@@ -33,37 +33,37 @@ import math
 initial_pos = [
     { # Sun
         "id": 0,
-        "or": 0,
+        "orbital_radius": 0,
         "orb_id": -1,
         "period": 1,
         "radius": 695508000
     },{ # Earth
         "id": 1,
-        "or": 149600000000,
+        "orbital_radius": 149600000000,
         "orb_id": 0,
         "period": 31558149,
         "radius": 6371000
     },{ # Mars
         "id": 2,
-        "or": 228000000000,
+        "orbital_radius": 228000000000,
         "orb_id": 0,
         "period": 59355072,
         "radius": 3389500
     },{ # Moon
         "id": 3,
-        "or": 385000000,
+        "orbital_radius": 385000000,
         "orb_id": 1,
         "period": 361592,
         "radius": 1737400
     },{ # ISS
         "id": 4,
-        "or": 6371000 + 400000, # Earth radius + 400km
+        "orbital_radius": 6371000 + 400000, # Earth radius + 400km
         "orb_id": 1,
         "period": 5580,
         "radius": 10
     },{ # Mars Orbiter
         "id": 5,
-        "or": 3389500 + 400000, # Mars radius + 400km
+        "orbital_radius": 3389500 + 400000, # Mars radius + 400km
         "orb_id": 2,
         "period": 7200,
         "radius": 10
@@ -104,11 +104,11 @@ def get_entity_stats(t, entity_stats, stat_list):
     if orbital_stats == -2:
         orbital_stats = get_entity_stats(t, search_entity_list(orb_id, initial_pos), stat_list)
 
-    coords = calc_orbit_position(orbital_stats["x"], orbital_stats["y"], entity_stats["or"], entity_stats["period"], t)
+    coords = calc_orbit_position(orbital_stats["x"], orbital_stats["y"], entity_stats["orbital_radius"], entity_stats["period"], t)
 
     return {
         "id": entity_stats["id"],
-        "or": entity_stats["or"],
+        "orbital_radius": entity_stats["orbital_radius"],
         "orb_id": entity_stats["orb_id"],
         "period": entity_stats["period"],
         "radius": entity_stats["radius"],
@@ -128,7 +128,7 @@ def get_stats(t: int):
             stats.append(
                 {
                     "id": 0,
-                    "or": 0,
+                    "orbital_radius": 0,
                     "orb_id": -1,
                     "period": 1,
                     "radius": 695508000,
