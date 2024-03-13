@@ -6,19 +6,26 @@ import matplotlib.animation as animation
 import json
 import numpy as np
 
+# radius of solar system (m)
+SOLAR_SYSTEM_RAD = 258000000000
+# radius near the earth (m)
+EARTH_ORBIT_RAD = 485000000
+SECONDS_IN_DAY = 86400
+# over 1 year in seconds
+MAX_T = 31536000
 
 fig, ax = plt.subplots()
 
-# ax.set_xlim([-258000000000, 258000000000])
-# ax.set_ylim([-258000000000, 258000000000]) 
+ax.set_xlim([-258000000000, 258000000000])
+ax.set_ylim([-258000000000, 258000000000]) 
 
 scatter = ax.scatter([], [])
 
-
+# called for frame i
 def animate(i):
-    # t is a parameter which varies 
-    # with the frame number 
-    t =  2 * 86400 * i  
+    # t is a parameter which varies with the frame number 
+    # 2 days per frame
+    t =  2 * SECONDS_IN_DAY * i  
 
     # slow down timer to see moon orbit earth
     # t = 3600 * i
@@ -36,8 +43,8 @@ def animate(i):
         y_data.append(datum["y"])
 
     # uncomment to see moon orbit earth
-    # ax.set_xlim([data[1]["x"] - 485000000, data[1]["x"] + 485000000])
-    # ax.set_ylim([data[1]["y"] - 485000000, data[1]["y"] + 485000000]) 
+    # ax.set_xlim([data[1]["x"] - EARTH_ORBIT_RAD, data[1]["x"] + EARTH_ORBIT_RAD])
+    # ax.set_ylim([data[1]["y"] - EARTH_ORBIT_RAD, data[1]["y"] + EARTH_ORBIT_RAD]) 
 
     # add it to animation
     scatter.set_offsets(np.column_stack((x_data, y_data)))  
@@ -57,20 +64,21 @@ def daily_points():
     t = 0
     colors = ["r", "b", "g", "c", "m", "y"]
 
-    while t < 31536000:
+    while t < MAX_T:
 
         data = sim.get_stats(t)
         index = 0
 
-        plt.xlim(-258000000000, 258000000000)
-        plt.ylim(-258000000000, 258000000000)
+        
+        plt.xlim(-SOLAR_SYSTEM_RAD, SOLAR_SYSTEM_RAD)
+        plt.ylim(-SOLAR_SYSTEM_RAD, SOLAR_SYSTEM_RAD)
         
         for datam in data:
             index = (index + 1) % len(colors)
             plt.plot(datam["x"], datam["y"], colors[index] + 'o')
             
 
-        t += 86400
+        t += SECONDS_IN_DAY
         plt.show()
     
 

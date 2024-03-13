@@ -118,7 +118,7 @@ def get_entity_stats(t, entity_stats, stat_list):
 
 
 # returns information for all entities at time time t
-def get_stats(t):
+def get_stats(t: int):
 
     stats = []
 
