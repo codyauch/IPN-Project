@@ -28,7 +28,8 @@ except ModuleNotFoundError:
 
 # define C++ functions
 # --------------------
-ns.cppyy.cppdef("""
+ns.cppyy.cppdef(
+    """
     using namespace ns3;
 
     void set_error_rate(NetDeviceContainer devices, int index, double rate, char *unit) {
@@ -37,13 +38,16 @@ ns.cppyy.cppdef("""
         em->SetAttribute("ErrorUnit", StringValue(unit));
         devices.Get(1)->SetAttribute("ReceiveErrorModel", PointerValue(em));
     }
-""")
+"""
+)
+
 
 class Client:
     """Client
 
     A class containing the various field needed to initialize an NS-3 client
     """
+
     def __init__(self, node, address, port: int):
         self.node = node
         self.address = address
@@ -80,11 +84,13 @@ class Client:
         """
         self.packet_size = packet_size
 
-class Server: # pylint: disable=too-few-public-methods
+
+class Server:  # pylint: disable=too-few-public-methods
     """Server
 
     A class containing the various field needed to initialize an NS-3 server
     """
+
     def __init__(self, node, port: int):
         self.node = node
         self.port = port
@@ -96,6 +102,7 @@ class Server: # pylint: disable=too-few-public-methods
         """
         self.port = port
 
+
 def logging_init():
     """logging_init
 
@@ -103,6 +110,7 @@ def logging_init():
     """
     ns.core.LogComponentEnable("UdpEchoClientApplication", ns.core.LOG_LEVEL_INFO)
     ns.core.LogComponentEnable("UdpEchoServerApplication", ns.core.LOG_LEVEL_INFO)
+
 
 def channel_init(nodes, rate: str, delay: str, error_rate: float, error_unit: str):
     """channel_init
@@ -124,6 +132,7 @@ def channel_init(nodes, rate: str, delay: str, error_rate: float, error_unit: st
 
     return devices
 
+
 def setup_internet_stack(nodes, devices):
     """setup_internet_stack
 
@@ -136,9 +145,12 @@ def setup_internet_stack(nodes, devices):
     stack.Install(nodes)
 
     address = ns.internet.Ipv4AddressHelper()
-    address.SetBase(ns.network.Ipv4Address("10.1.1.0"), ns.network.Ipv4Mask("255.255.255.0"))
+    address.SetBase(
+        ns.network.Ipv4Address("10.1.1.0"), ns.network.Ipv4Mask("255.255.255.0")
+    )
 
     return address.Assign(devices)
+
 
 def create_server(server: Server, start_time: float, stop_time: float):
     """create_server
@@ -155,6 +167,7 @@ def create_server(server: Server, start_time: float, stop_time: float):
     server_apps.Start(ns.core.Seconds(start_time))
     server_apps.Stop(ns.core.Seconds(stop_time))
 
+
 def create_client(client: Client, start_time: float, stop_time: float):
     """create_client
 
@@ -166,12 +179,15 @@ def create_client(client: Client, start_time: float, stop_time: float):
     """
     echo_client = ns.applications.UdpEchoClientHelper(client.address, client.port)
     echo_client.SetAttribute("MaxPackets", ns.core.UintegerValue(client.max_packets))
-    echo_client.SetAttribute("Interval", ns.core.TimeValue(ns.core.Seconds(client.interval)))
+    echo_client.SetAttribute(
+        "Interval", ns.core.TimeValue(ns.core.Seconds(client.interval))
+    )
     echo_client.SetAttribute("PacketSize", ns.core.UintegerValue(client.packet_size))
 
     client_apps = echo_client.Install(client.node)
     client_apps.Start(ns.core.Seconds(start_time))
     client_apps.Stop(ns.core.Seconds(stop_time))
+
 
 def main():
     """main
@@ -198,5 +214,6 @@ def main():
     ns.core.Simulator.Run()
     ns.core.Simulator.Destroy()
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     main()
