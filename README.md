@@ -1,7 +1,7 @@
 # IPN Project
 
 To run the simulator, install `ns-3` with `pip` and then run
-`python3 simulator.py`.
+`python3 simulator.py`. Note that this project must be run on Linux.
 
 `ns-3` does not have a PyPI package on the ARM
 platform. If you are using such a device, you can do the following to build and

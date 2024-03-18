@@ -2,3 +2,5 @@ __pycache__
 paper/paper.aux
 paper/paper.dvi
 paper/paper.log
+venv
+.ccls-cache
