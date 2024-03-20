@@ -2,5 +2,8 @@ __pycache__
 paper/paper.aux
 paper/paper.dvi
 paper/paper.log
+paper/paper.fdb_latexmk
+texput.fls
+texput.log
 venv
 .ccls-cache
