@@ -1,6 +1,9 @@
 import math
 import json
 
+# Speed of light m/s
+C = 299792458.0
+
 # sun is at polar coordinates 0, 0
 
 # average sun radius:  695 508 000 m 
@@ -160,7 +163,9 @@ def get_stats(t: int):
             entity_stats = get_entity_stats(t, entity, stats)
             stats.append(entity_stats)
 
-    return get_connections(stats)
+    stats = get_connections(stats)
+
+    return stats
 
 
 # given two points to make a line, and a point
@@ -237,14 +242,35 @@ def get_connections(stats):
                         if dist < entity_blocking["radius"]:
                             blocking = True
 
+                if not blocking:
+                    dist = dist_between_points(entity_receiving["x"], entity_receiving["y"], entity_sending["x"], entity_sending["y"])
+                    trans_time = transmission_time(dist)
+                else:
+                    dist = None
+                    trans_time = None
+
                 entity_sending["connections"].append(
                     {
                         "id": entity_receiving["id"],
-                        "connected": not blocking
+                        "connected": not blocking,
+                        "distance": dist,
+                        "trans_time": trans_time,
                     }
                 )
     
     return stats
+
+
+# sending messages at speed of light
+# given a distance how long does it take
+def transmission_time(dist):
+    return dist / C
+
+
+# pythagorean theorem
+def dist_between_points(x1, y1, x2, y2):
+    return math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+
 
 # for testing
 # print(json.dumps(get_stats(0), indent=4))
