@@ -7,3 +7,5 @@ texput.fls
 texput.log
 venv
 .ccls-cache
+*.fls
+*.synctex.gz
