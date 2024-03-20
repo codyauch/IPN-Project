@@ -1,6 +1,75 @@
 \documentclass[a4paper,12pt]{article}
-\begin{document}
 
-Hello World
+
+\title{Analyzing Network Transfer Protocols on a Simulated Interplanetary Internet}
+\author{Cody Auch, Mark Lysack, Jacob Janzen}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Abstract}
+
+\section{Introduction}
+
+In the past decade interest in returning back to space has increased internationally. Many organizations 
+have started sending remote vehicles into space for the first time \cite{(indian space program, spaceX, ect)}
+and there are talks of a permanent lunar base being created. With an increased amount of satellites and potentially 
+permanent bases outside of Earths orbit, the demand on the interplanetary network (IPN) is increased. The IPN has a 
+series of unique challenges such as a high amount of error, constantly changing network topology, and long 
+propagation delay. The solution to these problems is implementing a delay tolerant network. While space organizations 
+have maintained the IPN with a set of standard protocols, these may not be sufficient for an expanding network.
+The simulator proposed shows how an IPN can handle different stages of development of an IPN as well as increased 
+throughput requirements.
+
+\section{Previous Work}
+
+\section{Methodology}
+
+\subsection{Physics Engine}
+
+A significant challenge in creating a IPN is the rapidly changing topology. To simulate 
+these rapid changing conditions a physics engine was created to model the orbits of several 
+entities in the solar system. Several assumptions were made in the simulator for the sake of 
+simplicity as the goal of the simulator is not to create a perfect model of the solar system 
+and the entities inside of the solar system, but rather conditions which a IPN would exist in. 
+
+The first assumption made was that all orbits are circular. Realistically, orbits are oval 
+shaped, with the two focal points. A result of this assumption is the elimination of any 
+difference in orbital speed due to Kepler's third law. The orbital radius was chosen by taking
+the average orbital radius of the real life celestial bodies.
+For example Earth's average orbital
+radius is 149.6 billion meters \cite{}, and therefore orbits around the sun in a circular orbit
+of radius 149.6 billion meters.  Another result of this assumption 
+is that orbits are considered to be centered around the body which it orbits. The Mars orbit 
+has a focal point that is further in space, making it more oval shaped than the earth orbit. \cite{} 
+While this could make changes to a 
+simulated network in some very specific situations, the primary behaviour of a solar system 
+is maintained, like retrograde orbits, periodical alignment, predictable behaviour, and 
+recursive orbits of sub orbiting object.
+
+All entities are assumed to have a circular shape, with a constant radius. Due to the scale of the 
+objects, both large and small, this has a very minor effect.
+
+The whole physics simulation has been done on a 2D plane. While planetary orbits were not perfectly
+aligned, on the astronomical scale which we are working on, assuming that all their orbits are 
+contained on the same plane will not effect the simulation significantly. Where this could be an issue 
+is for when there are more than two satellites orbiting the same entity, with a relatively low orbit. For
+example satellites orbiting Earth. While there are some complex satellite interactions which are removed 
+it does still simulate satellites having to form a network around the entity it is 
+orbiting, it just requires less satellites then if it needed to form a 3D network. 
+
+Messages between entities were assumed to be sent at the speed of light, as all forms of radio, lasers,
+or other wireless messages all are sent at the speed of light. Since propagation delay is much higher 
+then terrestrial networks, other delays (TODO specify which delays) were ignored as being negligible. 
+
+Based on these simplifications, a physical simulation with several goals. To calculate if a line of 
+sight could be made between two communicating entities, that is if a message can be sent, to calculate 
+the error rate when sending a message, and to calculate the message propagation delay for the message to 
+be sent. Line of sight was achieved using simple geometry calculations. (See appendix) All entities are able to block 
+signals if the ray passes through the radius of the entity. (TODO Cody inserts bit about error calculation)
+Propagation delay is a simple function of distance and the speed of light. The input of the physics engine 
+is a time $t$ from some preset initial conditions which outputs the state of all entities.
+
 
 \end{document}
