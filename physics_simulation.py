@@ -1,6 +1,9 @@
 import math
 import json
 
+# Speed of light m/s
+C = 299792458.0
+
 # sun is at polar coordinates 0, 0
 
 # average sun radius:  695 508 000 m 
@@ -26,6 +29,7 @@ import json
 # randomize initial positions
 
 # id: the id for the entity
+# name: the english name of the entity
 # or: orbital radius of the entity (m)
 # orb_id: the id of the entity which this entity orbits
 #         The sun will be set to -1 (no index), since it is not orbiting any modeled entities
@@ -36,6 +40,7 @@ import json
 initial_pos = [
     { # Sun
         "id": 0,
+        "name": "Sun",
         "orbital_radius": 0,
         "orb_id": -1,
         "period": 1,
@@ -44,6 +49,7 @@ initial_pos = [
         "orbital_direction": 1,
     },{ # Earth
         "id": 1,
+        "name": "Earth",
         "orbital_radius": 149600000000,
         "orb_id": 0,
         "period": 31558149,
@@ -52,6 +58,7 @@ initial_pos = [
         "orbital_direction": 1,
     },{ # Mars
         "id": 2,
+        "name": "Mars",
         "orbital_radius": 228000000000,
         "orb_id": 0,
         "period": 59355072,
@@ -60,6 +67,7 @@ initial_pos = [
         "orbital_direction": 1,
     },{ # Moon
         "id": 3,
+        "name": "The Moon",
         "orbital_radius": 385000000,
         "orb_id": 1,
         "period": 361592,
@@ -68,6 +76,7 @@ initial_pos = [
         "orbital_direction": 1,
     },{ # ISS
         "id": 4,
+        "name": "ISS",
         "orbital_radius": 6371000 + 400000, # Earth radius + 400km
         "orb_id": 1,
         "period": 5580,
@@ -76,6 +85,7 @@ initial_pos = [
         "orbital_direction": 1,
     },{ # Mars Orbiter
         "id": 5,
+        "name": "Mars Orbiter",
         "orbital_radius": 3389500 + 400000, # Mars radius + 400km
         "orb_id": 2,
         "period": 7200,
@@ -124,6 +134,7 @@ def get_entity_stats(t, entity_stats, stat_list):
 
     return {
         "id": entity_stats["id"],
+        "name": entity_stats["name"],
         "orbital_radius": entity_stats["orbital_radius"],
         "orb_id": entity_stats["orb_id"],
         "period": entity_stats["period"],
@@ -146,6 +157,7 @@ def get_stats(t: int):
             stats.append(
                 {
                     "id": 0,
+                    "name": "Sun",
                     "orbital_radius": 0,
                     "orb_id": -1,
                     "period": 1,
@@ -160,7 +172,9 @@ def get_stats(t: int):
             entity_stats = get_entity_stats(t, entity, stats)
             stats.append(entity_stats)
 
-    return get_connections(stats)
+    stats = get_connections(stats)
+
+    return stats
 
 
 # given two points to make a line, and a point
@@ -207,6 +221,7 @@ def point_dist_to_line(line_x1: float, line_y1: float, line_x2: float, line_y2: 
 # takes in a data structure stats which has all of the meta data for all of the 
 # entities, including:
 # "id": id of the entity
+# "name": english name of the entity
 # "orbital_radius": radius of the orbit (m)
 # "orb_id": id of the entity which this entity orbits
 # "period": orbital period (s)
@@ -237,14 +252,36 @@ def get_connections(stats):
                         if dist < entity_blocking["radius"]:
                             blocking = True
 
+                if not blocking:
+                    dist = dist_between_points(entity_receiving["x"], entity_receiving["y"], entity_sending["x"], entity_sending["y"])
+                    trans_time = transmission_time(dist)
+                else:
+                    dist = None
+                    trans_time = None
+
                 entity_sending["connections"].append(
                     {
                         "id": entity_receiving["id"],
-                        "connected": not blocking
+                        "name": entity_receiving["name"],
+                        "connected": not blocking,
+                        "distance": dist,
+                        "trans_time": trans_time,
                     }
                 )
     
     return stats
+
+
+# sending messages at speed of light
+# given a distance how long does it take
+def transmission_time(dist):
+    return dist / C
+
+
+# pythagorean theorem
+def dist_between_points(x1, y1, x2, y2):
+    return math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+
 
 # for testing
 # print(json.dumps(get_stats(0), indent=4))
