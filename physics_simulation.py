@@ -4,6 +4,9 @@ import json
 # Speed of light m/s
 C = 299792458.0
 
+# Transmission Frequency (Hz)
+T_FREQ = (30*10)**9
+
 # sun is at polar coordinates 0, 0
 
 # average sun radius:  695 508 000 m 
@@ -281,6 +284,21 @@ def transmission_time(dist):
 # pythagorean theorem
 def dist_between_points(x1, y1, x2, y2):
     return math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+
+
+# Calculate the free space path loss between 2 points
+#
+def free_space_path_loss(x1, y1, x2, y2) -> float:
+    # Define the transmission frequency (30GHz, middle of Ka-band) and calculate wavelength
+    wavelength = C / T_FREQ
+
+    # Distance between the points 
+    distance = dist_between_points(x1, y1, x2, y2) / 1000 
+
+    # Assuming transmission/reception via isotropic antennas
+    loss_ratio = ((4 * math.pi * distance)/wavelength) ** 2
+    
+    return loss_ratio
 
 
 # for testing
