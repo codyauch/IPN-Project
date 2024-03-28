@@ -72,7 +72,7 @@ get_netdevice_node_index = ns.cppyy.gbl.get_netdevice_node_index
 set_channel_delay = ns.cppyy.gbl.set_channel_delay
 cpp_update_topology = ns.cppyy.gbl.cpp_update_topology
 
-global_time = 0
+global_time = 10000
 global_topology = None
 
 TIME_STEP = 60
@@ -116,7 +116,6 @@ def create_topology() -> Topology:
             else:
                 np = create_node_pair(nodes, i, j)
 
-                # TODO set attributes based on real statistics
                 p2p = ns.point_to_point.PointToPointHelper()
                 p2p.SetDeviceAttribute("DataRate", ns.core.StringValue("5Mbps"))
                 ch = p2p.Install(np)
@@ -221,7 +220,7 @@ def simulate():
 
     topology = create_topology()
     global_topology = topology
-    install_onoff_app(topology, 2, 1, 5)
+    install_onoff_app(topology, 1, 1, 5)
     install_sink(topology, 5)
     cpp_update_topology()
 
