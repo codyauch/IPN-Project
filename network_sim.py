@@ -94,7 +94,8 @@ class ConnectionData:
 
 
 def create_topology() -> Topology:
-    entities = get_stats(0)
+    entities = get_stats(10000)
+    print(json.dumps(entities, indent=2))
     nodes = ns.network.NodeContainer()
     nodes.Create(len(entities))
 
@@ -149,7 +150,7 @@ def install_onoff_app(topology: Topology, index: int, ch_i: int, ch_j: int) -> N
     )
 
     # one packet per TIME_STEP
-    rate = 1 / TIME_STEP
+    rate = 8 / TIME_STEP
     onoff.SetConstantRate(ns.network.DataRate(f"{rate}kbps"))
     onoff.SetAttribute("PacketSize", ns.core.UintegerValue(1024))
 
