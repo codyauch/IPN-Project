@@ -77,6 +77,8 @@ global_topology = None
 
 TIME_STEP = 60
 
+SIM_LENGTH = 60 * 60 * 24
+
 @dataclass
 class Topology:
     nodes: "NodeContainer"
@@ -140,19 +142,22 @@ def install_onoff_app(topology: Topology, index: int, ch_i: int, ch_j: int) -> N
         return
 
     onoff = ns.applications.OnOffHelper("ns3::UdpSocketFactory", ns.network.InetSocketAddress(address.GetAddress(1), port).ConvertTo())
-    onoff.SetConstantRate(ns.network.DataRate("2kbps"))
-    onoff.SetAttribute("PacketSize", ns.core.UintegerValue(50))
+
+    # one packet per TIME_STEP
+    rate = 1 / TIME_STEP
+    onoff.SetConstantRate(ns.network.DataRate(f"{rate}kbps"))
+    onoff.SetAttribute("PacketSize", ns.core.UintegerValue(1024))
 
     apps = onoff.Install(topology.nodes.Get(index))
-    apps.Start(ns.core.Seconds(1.0))
-    apps.Stop(ns.core.Seconds(10.0))
+    apps.Start(ns.core.Seconds(0.0))
+    apps.Stop(ns.core.Seconds(SIM_LENGTH))
 
 def install_sink(topology: Topology, index: int) -> None:
     port = 9 # Discard port (RFC 863)
     sink = ns.applications.PacketSinkHelper("ns3::UdpSocketFactory", ns.InetSocketAddress(ns.Ipv4Address.GetAny(), port).ConvertTo())
     apps = sink.Install(topology.nodes.Get(index))
-    apps.Start(ns.core.Seconds(1.0))
-    apps.Stop(ns.core.Seconds(10.0))
+    apps.Start(ns.core.Seconds(0.0))
+    apps.Stop(ns.core.Seconds(SIM_LENGTH))
 
 def update_topology() -> None:
     if global_topology is None:
@@ -207,7 +212,6 @@ def simulate():
     install_sink(topology, 5)
     cpp_update_topology()
 
-    # TODO schedule recomputation of state
     print_routing_table()
 
 
