@@ -19,34 +19,40 @@ ns.cppyy.cppdef(
 
 using namespace ns3;
 
+// create a NodeContainer with two nodes
 NodeContainer create_node_pair(NodeContainer nodes, int i, int j) {
     return NodeContainer(nodes.Get(i), nodes.Get(j));
 }
 
+// set an interface to be down
 void set_down(NodeContainer c, int index, int interface) {
     Ptr<Node> n = c.Get(index);
     Ptr<Ipv4> ipv4 = n->GetObject<Ipv4>();
     ipv4->SetDown(interface);
 }
 
+// set an interface to be up
 void set_up(NodeContainer c, int index, int interface) {
     Ptr<Node> n = c.Get(index);
     Ptr<Ipv4> ipv4 = n->GetObject<Ipv4>();
     ipv4->SetUp(interface);
 }
 
+// print the global routing table
 void print_routing_table() {
     Ipv4GlobalRoutingHelper globalRouting;
     Ptr<OutputStreamWrapper> routingStream = Create<OutputStreamWrapper> (&std::cout);
     globalRouting.PrintRoutingTableAllAt (Seconds(0.1), routingStream );
 }
 
+// get the number of devices
 int get_num_devices(NodeContainer c, int index) {
     Ptr<Node> n = c.Get(index);
 
     return n->GetNDevices();
 }
 
+// get the index of a netdevice
 int get_netdevice_node_index(NodeContainer c, int node_index, int device_index) {
     Ptr<Channel> ch = c.Get(node_index)->GetDevice(device_index)->GetChannel();
     int i1 = ch->GetDevice(0)->GetNode()->GetId();
@@ -55,13 +61,14 @@ int get_netdevice_node_index(NodeContainer c, int node_index, int device_index) 
     return node_index == i1 ? i2 : i1;
 }
 
+// set the channel delay on a channel
 void set_channel_delay(NodeContainer c, int node_index, int device_index, double seconds) {
     Ptr<Channel> ch = c.Get(node_index)->GetDevice(device_index)->GetChannel();
 
     ch->SetAttribute("Delay", TimeValue(Seconds(seconds)));
 }
 
-// Schedule seems to require CPP functions.
+// Schedule seems to require CPP functions
 // This gets around that by calling the python function from CPP
 void cpp_update_topology() {
     CPyCppyy::Eval("update_topology()");
@@ -69,6 +76,7 @@ void cpp_update_topology() {
 """
 )
 
+# shorten names of cpp functions
 create_node_pair = ns.cppyy.gbl.create_node_pair
 set_down = ns.cppyy.gbl.set_down
 set_up = ns.cppyy.gbl.set_up
@@ -78,11 +86,12 @@ get_netdevice_node_index = ns.cppyy.gbl.get_netdevice_node_index
 set_channel_delay = ns.cppyy.gbl.set_channel_delay
 cpp_update_topology = ns.cppyy.gbl.cpp_update_topology
 
+# global vars (we need global state to allow calling Python function from CPP)
 GLOBAL_TIME = 10000
 GLOBAL_TOPOLOGY = None
 
+# constants
 TIME_STEP = 60
-
 SIM_LENGTH = 60 * 60 * 24
 
 
@@ -91,7 +100,7 @@ class Topology:
     """Topology
 
     object containing data about Topology
-    (we don't really need this tbh)
+    (we don't really need this tbh, but I'm not about to rewrite this)
     """
 
     nodes: "NodeContainer"
@@ -103,7 +112,8 @@ class Topology:
 class ConnectionData:
     """ConnectionData
 
-    object containing data about a connection"""
+    object containing data about a connection
+    """
 
     connected: bool
     trans_time: float
@@ -114,17 +124,20 @@ def create_topology() -> Topology:
 
     create a network topology from entities
     """
-    entities = get_stats(10000)
-    print(json.dumps(entities, indent=2))
+    # get the number of nodes in the network
+    entities = get_stats(0)
     nodes = ns.network.NodeContainer()
     nodes.Create(len(entities))
 
+    # install internet stack on each node
     internet = ns.internet.InternetStackHelper()
     internet.Install(nodes)
 
+    # setup IPv4
     ipv4 = ns.internet.Ipv4AddressHelper()
     ipv4.SetBase("10.0.0.0", "255.255.255.0")
 
+    # setup channel for each pair of nodes
     channel_table = []
     ip_table = []
     for i, _ in enumerate(entities):
@@ -224,6 +237,8 @@ def update_topology() -> None:
             for i in range(1, get_num_devices(GLOBAL_TOPOLOGY.nodes, id)):
                 set_down(GLOBAL_TOPOLOGY.nodes, id, i)
         else:
+            # update the connections
+            # TODO update error rate
             conns = {}
             for i, conn in enumerate(entity["connections"]):
                 conns[conn["id"]] = ConnectionData(
@@ -240,10 +255,8 @@ def update_topology() -> None:
                 else:
                     set_down(GLOBAL_TOPOLOGY.nodes, id, i)
 
-        # TODO update error rate
-
+    # recompute routing tables and update time
     ns.internet.Ipv4GlobalRoutingHelper.RecomputeRoutingTables()
-
     GLOBAL_TIME += TIME_STEP
 
 
@@ -263,14 +276,17 @@ def simulate() -> None:
     ns.core.LogComponentEnable("OnOffApplication", ns.core.LOG_LEVEL_INFO)
     ns.core.LogComponentEnable("PacketSink", ns.core.LOG_LEVEL_INFO)
 
+    # initial the topology
     topology = create_topology()
     GLOBAL_TOPOLOGY = topology
     install_onoff_app(topology, 1, 1, 5)
     install_sink(topology, 5)
     cpp_update_topology()
 
+    # schedule recomputation of topology once a minute
     ns.core.Simulator.Schedule(ns.core.Seconds(60.0), cpp_update_topology)
 
+    # run the simulator
     ns.core.Simulator.Run()
     ns.core.Simulator.Destroy()
 
