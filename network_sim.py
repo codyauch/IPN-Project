@@ -225,8 +225,6 @@ def simulate():
     install_sink(topology, 5)
     cpp_update_topology()
 
-    print_routing_table()
-
     ns.core.Simulator.Schedule(ns.core.Seconds(60.0), cpp_update_topology)
 
     ns.core.Simulator.Run()
