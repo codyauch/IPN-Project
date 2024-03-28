@@ -47,6 +47,12 @@ int get_netdevice_node_index(NodeContainer c, int node_index, int device_index) 
 
     return node_index == i1 ? i2 : i1;
 }
+
+void set_channel_delay(NodeContainer c, int node_index, int device_index, double seconds) {
+    Ptr<Channel> ch = c.Get(node_index)->GetDevice(device_index)->GetChannel();
+
+    ch->SetAttribute("Delay", TimeValue(Seconds(seconds)));
+}
 """
 )
 
@@ -56,7 +62,7 @@ set_up = ns.cppyy.gbl.set_up
 print_routing_table = ns.cppyy.gbl.print_routing_table
 get_num_devices = ns.cppyy.gbl.get_num_devices
 get_netdevice_node_index = ns.cppyy.gbl.get_netdevice_node_index
-
+set_channel_delay = ns.cppyy.gbl.set_channel_delay
 
 @dataclass
 class Topology:
@@ -155,10 +161,11 @@ def update_topology(topology: Topology, time: int) -> None:
                 conn_id = get_netdevice_node_index(topology.nodes, id, i)
                 if conn_id in conns and conns[conn_id].connected:
                     set_up(topology.nodes, id, i)
+                    set_channel_delay(topology.nodes, id, i, conns[conn_id].trans_time)
                 else:
                     set_down(topology.nodes, id, i)
 
-        # TODO update delay, error rate, etc
+        # TODO update error rate
 
     ns.internet.Ipv4GlobalRoutingHelper.RecomputeRoutingTables()
 
@@ -174,7 +181,7 @@ def simulate():
     ns.core.LogComponentEnable("PacketSink", ns.core.LOG_LEVEL_INFO)
 
     topology = create_topology()
-    install_onoff_app(topology, 1, 1, 5)
+    install_onoff_app(topology, 2, 1, 5)
     install_sink(topology, 5)
     update_topology(topology, 10000)
 
