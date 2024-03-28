@@ -1,7 +1,12 @@
-from typing import List
+"""network_sim
+
+run a simulation of interplanetary network
+"""
+
 import json
-from ns import ns
 from dataclasses import dataclass
+from typing import List
+from ns import ns
 from physics_simulation import get_stats
 
 NodeContainer = ns.cppyy.gbl.ns3.NodeContainer
@@ -56,7 +61,8 @@ void set_channel_delay(NodeContainer c, int node_index, int device_index, double
     ch->SetAttribute("Delay", TimeValue(Seconds(seconds)));
 }
 
-// Schedule seems to require CPP functions. This gets around that by calling the python function from CPP
+// Schedule seems to require CPP functions.
+// This gets around that by calling the python function from CPP
 void cpp_update_topology() {
     CPyCppyy::Eval("update_topology()");
 }
@@ -72,8 +78,8 @@ get_netdevice_node_index = ns.cppyy.gbl.get_netdevice_node_index
 set_channel_delay = ns.cppyy.gbl.set_channel_delay
 cpp_update_topology = ns.cppyy.gbl.cpp_update_topology
 
-global_time = 10000
-global_topology = None
+GLOBAL_TIME = 10000
+GLOBAL_TOPOLOGY = None
 
 TIME_STEP = 60
 
@@ -82,6 +88,12 @@ SIM_LENGTH = 60 * 60 * 24
 
 @dataclass
 class Topology:
+    """Topology
+
+    object containing data about Topology
+    (we don't really need this tbh)
+    """
+
     nodes: "NodeContainer"
     channel_table: "List[List[NetDeviceContainer|None]]"
     ip_table: "List[List[Ipv4InterfaceContainer|None]]"
@@ -89,11 +101,19 @@ class Topology:
 
 @dataclass
 class ConnectionData:
+    """ConnectionData
+
+    object containing data about a connection"""
+
     connected: bool
     trans_time: float
 
 
 def create_topology() -> Topology:
+    """create_topology
+
+    create a network topology from entities
+    """
     entities = get_stats(10000)
     print(json.dumps(entities, indent=2))
     nodes = ns.network.NodeContainer()
@@ -139,6 +159,15 @@ def create_topology() -> Topology:
 
 
 def install_onoff_app(topology: Topology, index: int, ch_i: int, ch_j: int) -> None:
+    """install_onoff_app
+
+    install an onoff application on a node
+
+    topology - the topology to install on
+    index    - the node to install on
+    ch_i     - index i to send to
+    ch_j     - index j to send to
+    """
     port = 9  # Discard port (RFC 863)
     address = topology.ip_table[ch_i][ch_j]
     if address is None:
@@ -160,6 +189,13 @@ def install_onoff_app(topology: Topology, index: int, ch_i: int, ch_j: int) -> N
 
 
 def install_sink(topology: Topology, index: int) -> None:
+    """install_sink
+
+    install sink on a given node
+
+    topology - the topology to install on
+    index    - the node to install on
+    """
     port = 9  # Discard port (RFC 863)
     sink = ns.applications.PacketSinkHelper(
         "ns3::UdpSocketFactory",
@@ -171,18 +207,22 @@ def install_sink(topology: Topology, index: int) -> None:
 
 
 def update_topology() -> None:
-    if global_topology is None:
+    """update_topology
+
+    update the topology
+    """
+    if GLOBAL_TOPOLOGY is None:
         return
 
-    global global_time
+    global GLOBAL_TIME  # pylint: disable=global-statement
 
-    entities = get_stats(global_time)
+    entities = get_stats(GLOBAL_TIME)
     for entity in entities:
-        id = entity["id"]
+        id = entity["id"]  # pylint:disable=redefined-builtin
         if not entity["can_connect"]:
             # take down each interface starting from index 1 (index 0 is loopback)
-            for i in range(1, get_num_devices(global_topology.nodes, id)):
-                set_down(global_topology.nodes, id, i)
+            for i in range(1, get_num_devices(GLOBAL_TOPOLOGY.nodes, id)):
+                set_down(GLOBAL_TOPOLOGY.nodes, id, i)
         else:
             conns = {}
             for i, conn in enumerate(entity["connections"]):
@@ -190,25 +230,29 @@ def update_topology() -> None:
                     connected=conn["connected"],
                     trans_time=conn["trans_time"],
                 )
-            for i in range(1, get_num_devices(global_topology.nodes, id)):
-                conn_id = get_netdevice_node_index(global_topology.nodes, id, i)
+            for i in range(1, get_num_devices(GLOBAL_TOPOLOGY.nodes, id)):
+                conn_id = get_netdevice_node_index(GLOBAL_TOPOLOGY.nodes, id, i)
                 if conn_id in conns and conns[conn_id].connected:
-                    set_up(global_topology.nodes, id, i)
+                    set_up(GLOBAL_TOPOLOGY.nodes, id, i)
                     set_channel_delay(
-                        global_topology.nodes, id, i, conns[conn_id].trans_time
+                        GLOBAL_TOPOLOGY.nodes, id, i, conns[conn_id].trans_time
                     )
                 else:
-                    set_down(global_topology.nodes, id, i)
+                    set_down(GLOBAL_TOPOLOGY.nodes, id, i)
 
         # TODO update error rate
 
     ns.internet.Ipv4GlobalRoutingHelper.RecomputeRoutingTables()
 
-    global_time += TIME_STEP
+    GLOBAL_TIME += TIME_STEP
 
 
-def simulate():
-    global global_topology
+def simulate() -> None:
+    """simulate
+
+    run a simulation
+    """
+    global GLOBAL_TOPOLOGY  # pylint: disable=global-statement
 
     # setup routing recomputation
     ns.Config.SetDefault(
@@ -220,7 +264,7 @@ def simulate():
     ns.core.LogComponentEnable("PacketSink", ns.core.LOG_LEVEL_INFO)
 
     topology = create_topology()
-    global_topology = topology
+    GLOBAL_TOPOLOGY = topology
     install_onoff_app(topology, 1, 1, 5)
     install_sink(topology, 5)
     cpp_update_topology()
