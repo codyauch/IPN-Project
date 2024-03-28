@@ -79,11 +79,13 @@ TIME_STEP = 60
 
 SIM_LENGTH = 60 * 60 * 24
 
+
 @dataclass
 class Topology:
     nodes: "NodeContainer"
     channel_table: "List[List[NetDeviceContainer|None]]"
     ip_table: "List[List[Ipv4InterfaceContainer|None]]"
+
 
 @dataclass
 class ConnectionData:
@@ -135,13 +137,17 @@ def create_topology() -> Topology:
         ip_table=ip_table,
     )
 
+
 def install_onoff_app(topology: Topology, index: int, ch_i: int, ch_j: int) -> None:
-    port = 9 # Discard port (RFC 863)
+    port = 9  # Discard port (RFC 863)
     address = topology.ip_table[ch_i][ch_j]
     if address is None:
         return
 
-    onoff = ns.applications.OnOffHelper("ns3::UdpSocketFactory", ns.network.InetSocketAddress(address.GetAddress(1), port).ConvertTo())
+    onoff = ns.applications.OnOffHelper(
+        "ns3::UdpSocketFactory",
+        ns.network.InetSocketAddress(address.GetAddress(1), port).ConvertTo(),
+    )
 
     # one packet per TIME_STEP
     rate = 1 / TIME_STEP
@@ -152,12 +158,17 @@ def install_onoff_app(topology: Topology, index: int, ch_i: int, ch_j: int) -> N
     apps.Start(ns.core.Seconds(0.0))
     apps.Stop(ns.core.Seconds(SIM_LENGTH))
 
+
 def install_sink(topology: Topology, index: int) -> None:
-    port = 9 # Discard port (RFC 863)
-    sink = ns.applications.PacketSinkHelper("ns3::UdpSocketFactory", ns.InetSocketAddress(ns.Ipv4Address.GetAny(), port).ConvertTo())
+    port = 9  # Discard port (RFC 863)
+    sink = ns.applications.PacketSinkHelper(
+        "ns3::UdpSocketFactory",
+        ns.InetSocketAddress(ns.Ipv4Address.GetAny(), port).ConvertTo(),
+    )
     apps = sink.Install(topology.nodes.Get(index))
     apps.Start(ns.core.Seconds(0.0))
     apps.Stop(ns.core.Seconds(SIM_LENGTH))
+
 
 def update_topology() -> None:
     if global_topology is None:
@@ -183,7 +194,9 @@ def update_topology() -> None:
                 conn_id = get_netdevice_node_index(global_topology.nodes, id, i)
                 if conn_id in conns and conns[conn_id].connected:
                     set_up(global_topology.nodes, id, i)
-                    set_channel_delay(global_topology.nodes, id, i, conns[conn_id].trans_time)
+                    set_channel_delay(
+                        global_topology.nodes, id, i, conns[conn_id].trans_time
+                    )
                 else:
                     set_down(global_topology.nodes, id, i)
 
@@ -213,7 +226,6 @@ def simulate():
     cpp_update_topology()
 
     print_routing_table()
-
 
     ns.core.Simulator.Schedule(ns.core.Seconds(60.0), cpp_update_topology)
 
