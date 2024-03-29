@@ -124,6 +124,10 @@ def create_topology() -> Topology:
 
     create a network topology from entities
     """
+
+    ascii = ns.network.AsciiTraceHelper()
+    stream = ascii.CreateFileStream("network-sim.tr")
+
     # get the number of nodes in the network
     entities = get_stats(0)
     nodes = ns.network.NodeContainer()
@@ -152,6 +156,7 @@ def create_topology() -> Topology:
 
                 p2p = ns.point_to_point.PointToPointHelper()
                 p2p.SetDeviceAttribute("DataRate", ns.core.StringValue("5Mbps"))
+                p2p.EnableAsciiAll(stream)
                 ch = p2p.Install(np)
                 channel_row.append(ch)
 
