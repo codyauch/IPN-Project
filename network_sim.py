@@ -4,6 +4,7 @@ run a simulation of interplanetary network
 """
 
 import json
+import csv
 from dataclasses import dataclass
 from typing import List
 from ns import ns
@@ -104,6 +105,7 @@ class Topology:
     """
 
     nodes: "NodeContainer"
+    num_nodes: int
     channel_table: "List[List[NetDeviceContainer|None]]"
     ip_table: "List[List[Ipv4InterfaceContainer|None]]"
 
@@ -131,7 +133,8 @@ def create_topology() -> Topology:
     # get the number of nodes in the network
     entities = get_stats(0)
     nodes = ns.network.NodeContainer()
-    nodes.Create(len(entities))
+    num_nodes = len(entities)
+    nodes.Create(num_nodes)
 
     # install internet stack on each node
     internet = ns.internet.InternetStackHelper()
@@ -171,6 +174,7 @@ def create_topology() -> Topology:
 
     return Topology(
         nodes=nodes,
+        num_nodes=num_nodes,
         channel_table=channel_table,
         ip_table=ip_table,
     )
@@ -265,6 +269,15 @@ def update_topology() -> None:
     GLOBAL_TIME += TIME_STEP
 
 
+def map_interfaces(topology: Topology):
+    interface_map = []
+    for i in range(topology.num_nodes):
+        for j in range(1, get_num_devices(topology.nodes, i)):
+            interface_map.append([i, j, get_netdevice_node_index(topology.nodes, i, j)])
+
+    return interface_map
+
+
 def simulate() -> None:
     """simulate
 
@@ -290,6 +303,14 @@ def simulate() -> None:
 
     # schedule recomputation of topology once a minute
     ns.core.Simulator.Schedule(ns.core.Seconds(60.0), cpp_update_topology)
+
+    print_routing_table()
+
+    interface_map = map_interfaces(topology)
+    with open("interface_mapping.csv", "w+") as im_csv:
+        csv_writer = csv.writer(im_csv, delimiter=",")
+        csv_writer.writerow(["Input Node", "Interface", "Output Node"])
+        csv_writer.writerows(interface_map)
 
     # run the simulator
     ns.core.Simulator.Run()
