@@ -1,7 +1,7 @@
 import re
 import pandas as pd
 
-
+# take trace file and turn it into a dataframe
 def process_trace():
     file1 = open('network-sim.tr', 'r')
     Lines = file1.readlines()
@@ -36,6 +36,8 @@ def process_trace():
     return df
 
 
+# based off of the trace file create a dataframe where each row is for 1 message id
+# has information on the time queued, time dequeued, time received, sending and receiving nodes
 def create_stats_df():
     trace_df = process_trace()
     interface_mapping_df = pd.read_csv("interface_mapping.csv")
@@ -52,7 +54,6 @@ def create_stats_df():
     df = df.drop_duplicates()
 
     # need to merge the df to itself, need to join them together
-    # merge on id?
 
     df_queue = df[df["type"] == "+"]
     df_dequeue = df[df["type"] == "-"]
@@ -69,4 +70,4 @@ def create_stats_df():
 
 
 # for testing
-print(create_stats_df())
+# print(create_stats_df())
