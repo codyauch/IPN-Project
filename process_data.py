@@ -1,6 +1,7 @@
 import re
 import pandas as pd
 
+
 # take trace file and turn it into a dataframe
 def process_trace():
     file1 = open('network-sim.tr', 'r')
@@ -62,7 +63,7 @@ def create_stats_df():
     df = df_queue.merge(df_dequeue, how="left", on="id")
     df = df.merge(df_type, how="left", on="id")
 
-    df[["node_sending", "node_receiving", "interface", "time_queued", "time_dequeued", "time_received", "id"]] = df[["node1", "node2", "interface", "time", "time_x", "time_y", "id"]]
+    df[["node_sending", "node_receiving", "interface", "time_queued", "time_dequeued", "time_received", "id"]] = df[["node1_x", "node2_x", "interface_x", "time_x", "time_y", "time", "id"]]
 
     df = df[["node_sending", "node_receiving", "interface", "time_queued", "time_dequeued", "time_received", "id"]]
 
@@ -70,4 +71,4 @@ def create_stats_df():
 
 
 # for testing
-# print(create_stats_df())
+print(create_stats_df())
