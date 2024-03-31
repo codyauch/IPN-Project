@@ -1,7 +1,7 @@
 # IPN Project
 
 To run the simulator, install `ns-3` with `pip` and then run
-`python3 simulator.py`. Note that this project must be run on Linux.
+`python3 network_sim.py`. Note that this project must be run on Linux.
 
 `ns-3` does not have a PyPI package on the ARM
 platform. If you are using such a device, you can do the following to build and
@@ -23,5 +23,5 @@ git clone git@github.com:codyauch/IPN-Project.git
 cd ..
 
 # run the simulator
-./ns3 run scratch/IPN-Project/simulator.py
+./ns3 run scratch/IPN-Project/network_sim.py
 ```

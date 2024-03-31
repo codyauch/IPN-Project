@@ -9,3 +9,4 @@ venv
 .ccls-cache
 *.fls
 *.synctex.gz
+network-sim.tr
