@@ -69,7 +69,8 @@ Based on these simplifications, a physical simulation with several goals. To cal
 sight could be made between two communicating entities, that is if a message can be sent, to calculate 
 the error rate when sending a message, and to calculate the message propagation delay for the message to 
 be sent. Line of sight was achieved using simple geometry calculations. (See appendix) All entities are able to block 
-signals if the ray passes through the radius of the entity. (TODO Cody inserts bit about error calculation)
+signals if the ray passes through the radius of the entity.
+One of the largest factors contributing to transmission error is the distance  travelled by the electromagnetic signal between transmitting and receiving nodes. By generalizing Friis' transmission formula for isotropic emitters and receivers, we can obtain the ratio of signal intensity received to signal intensity transmitted, known as Free Space Path Loss (FSPL). We can use FSPL as our transmission error rate, giving the following expression: $Error Rate = (\frac{4 \pi d}{\lambda})^2$ where $d$ is the distance between nodes in metres and $\lambda$ is the wavelength of the electromagnetic wave used in transmission. As much of space communications utilizes the Ka-band of frequencies (27-40 GHz) we opted to use a transmission frequency of 30Ghz. The transmission wavelength can be then calculated according to $\lambda = \frac{c}{f}$, where $c$ is the speed of light and $f$ is the transmission frequency, giving a transmission wavelength of ~9.99mm.
 Propagation delay is a simple function of distance and the speed of light. The input of the physics engine 
 is a time $t$ from some preset initial conditions which outputs the state of all entities.
 
