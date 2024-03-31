@@ -4,6 +4,9 @@ import json
 # Speed of light m/s
 C = 299792458.0
 
+# Transmission Frequency (Hz)
+T_FREQ = (30*10)**9
+
 # sun is at polar coordinates 0, 0
 
 # average sun radius:  695 508 000 m 
@@ -255,9 +258,11 @@ def get_connections(stats):
                 if not blocking:
                     dist = dist_between_points(entity_receiving["x"], entity_receiving["y"], entity_sending["x"], entity_sending["y"])
                     trans_time = transmission_time(dist)
+                    err_rate = get_error_rate(entity_sending, entity_receiving)
                 else:
                     dist = None
                     trans_time = None
+                    err_rate = None
 
                 entity_sending["connections"].append(
                     {
@@ -266,6 +271,7 @@ def get_connections(stats):
                         "connected": not blocking,
                         "distance": dist,
                         "trans_time": trans_time,
+                        "error_rate": err_rate
                     }
                 )
     
@@ -282,6 +288,25 @@ def transmission_time(dist):
 def dist_between_points(x1, y1, x2, y2):
     return math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
 
+
+# Calculate the free space path loss between 2 points
+# https://en.wikipedia.org/wiki/Free-space_path_loss#Free-space_path_loss_formula
+def free_space_path_loss(x1, y1, x2, y2) -> float:
+    # Define the transmission frequency (30GHz, middle of Ka-band) and calculate wavelength
+    wavelength = C / T_FREQ
+
+    # Distance between the points in m
+    distance = dist_between_points(x1, y1, x2, y2)
+
+    # Assuming transmission/reception via isotropic antennas
+    loss_ratio = (wavelength/(4 * math.pi * distance)) ** 2
+    
+    return loss_ratio
+
+# Get the rate of transmission error between two satelites
+def get_error_rate(sender, receiver) -> float:
+    assert("x" in sender.keys() and "y" in sender.keys() and "x" in receiver.keys() and "y" in receiver.keys())
+    return free_space_path_loss(sender["x"], sender["y"], receiver["x"], receiver["y"])
 
 # for testing
 # print(json.dumps(get_stats(0), indent=4))
