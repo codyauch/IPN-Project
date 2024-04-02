@@ -69,6 +69,16 @@ void set_channel_delay(NodeContainer c, int node_index, int device_index, double
     ch->SetAttribute("Delay", TimeValue(Seconds(seconds)));
 }
 
+// set the error rate on a channel
+void set_channel_error(NodeContainer c, int node_index, int device_index, double rate) {
+    Ptr<NetDevice> ch = c.Get(node_index)->GetDevice(device_index);
+    Ptr<RateErrorModel> em = CreateObject<RateErrorModel>();
+    em->SetAttribute("ErrorRate", DoubleValue(rate));
+    em->SetUnit(RateErrorModel::ERROR_UNIT_BIT);
+
+    ch->SetAttribute("ReceiveErrorModel", PointerValue(em));
+}
+
 // Schedule seems to require CPP functions
 // This gets around that by calling the python function from CPP
 void cpp_update_topology() {
@@ -85,6 +95,7 @@ print_routing_table = ns.cppyy.gbl.print_routing_table
 get_num_devices = ns.cppyy.gbl.get_num_devices
 get_netdevice_node_index = ns.cppyy.gbl.get_netdevice_node_index
 set_channel_delay = ns.cppyy.gbl.set_channel_delay
+set_channel_error = ns.cppyy.gbl.set_channel_error
 cpp_update_topology = ns.cppyy.gbl.cpp_update_topology
 
 # global vars (we need global state to allow calling Python function from CPP)
@@ -119,6 +130,7 @@ class ConnectionData:
 
     connected: bool
     trans_time: float
+    error_rate: float
 
 
 def create_topology() -> Topology:
@@ -253,6 +265,7 @@ def update_topology() -> None:
                 conns[conn["id"]] = ConnectionData(
                     connected=conn["connected"],
                     trans_time=conn["trans_time"],
+                    error_rate=conn["error_rate"],
                 )
             for i in range(1, get_num_devices(GLOBAL_TOPOLOGY.nodes, id)):
                 conn_id = get_netdevice_node_index(GLOBAL_TOPOLOGY.nodes, id, i)
@@ -261,6 +274,7 @@ def update_topology() -> None:
                     set_channel_delay(
                         GLOBAL_TOPOLOGY.nodes, id, i, conns[conn_id].trans_time
                     )
+                    set_channel_error(GLOBAL_TOPOLOGY.nodes, id, i, conns[conn_id].error_rate)
                 else:
                     set_down(GLOBAL_TOPOLOGY.nodes, id, i)
 
@@ -303,8 +317,6 @@ def simulate() -> None:
 
     # schedule recomputation of topology once a minute
     ns.core.Simulator.Schedule(ns.core.Seconds(60.0), cpp_update_topology)
-
-    print_routing_table()
 
     interface_map = map_interfaces(topology)
     with open("interface_mapping.csv", "w+") as im_csv:
