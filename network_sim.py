@@ -274,7 +274,9 @@ def update_topology() -> None:
                     set_channel_delay(
                         GLOBAL_TOPOLOGY.nodes, id, i, conns[conn_id].trans_time
                     )
-                    set_channel_error(GLOBAL_TOPOLOGY.nodes, id, i, conns[conn_id].error_rate)
+                    set_channel_error(
+                        GLOBAL_TOPOLOGY.nodes, id, i, conns[conn_id].error_rate
+                    )
                 else:
                     set_down(GLOBAL_TOPOLOGY.nodes, id, i)
 
