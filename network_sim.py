@@ -3,6 +3,14 @@ import json
 from ns import ns
 from physics_simulation import get_stats
 
+# NOTE ------------------------------------------------------------------------
+# Multiply all times output by this by 26 to get the correct time
+# This divider gets around the very limited TTL on sockets
+# This is a workaround to not have to implement my own TCP protocol from scratch
+# and guarantees that message sent across the diameter of Mars's orbit will not
+# time out before they even arrive
+TIME_DIVIDER = 26
+
 ns.cppyy.cppdef(
     """
 #include "CPyCppyy/API.h"
@@ -133,12 +141,15 @@ class Network:
                 else:
                     details = entities[i]["connections"][connections[j]]
                     if details["connected"]:
-                        set_channel_delay(self.routers, i, j, details["trans_time"])
+                        set_channel_delay(
+                            self.routers, i, j, details["trans_time"] / TIME_DIVIDER
+                        )
                         # set_channel_delay(self.routers, i, j, 61.399)
                         set_channel_error(self.routers, i, j, details["error_rate"])
                         set_up(self.routers, i, j)
                     else:
                         set_down(self.routers, i, j)
+        ns.internet.Ipv4GlobalRoutingHelper.RecomputeRoutingTables()
         self.time += self.time_step
 
     def __create_nodes(self):
@@ -184,7 +195,7 @@ class Network:
         p2p = ns.point_to_point.PointToPointHelper()
         p2p.SetDeviceAttribute("DataRate", ns.core.StringValue("10Mbps"))
         p2p.SetChannelAttribute("Delay", ns.core.StringValue("0ms"))
-        # p2p.EnableAsciiAll(self.stream)
+        p2p.EnableAsciiAll(self.stream)
         self.sender_to_router = p2p.Install(
             self.sender.Get(0), self.routers.Get(sender_id)
         )
@@ -234,5 +245,5 @@ class Network:
         apps_sink.Stop(ns.core.Seconds(self.simulation_len))
 
 
-network = Network(10000, Protocol.TCP, "Earth", "Mars", simulation_len=60 * 60)
+network = Network(10000, Protocol.TCP, "Earth", "Mars", simulation_len=60 * 60 * 24)
 network.run()
