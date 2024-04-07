@@ -1,28 +1,16 @@
-"""network_sim
-
-run a simulation of interplanetary network
-"""
-
+from enum import Enum
 import json
-import csv
-from dataclasses import dataclass
-from typing import List
 from ns import ns
 from physics_simulation import get_stats
-
-NodeContainer = ns.cppyy.gbl.ns3.NodeContainer
-NetDeviceContainer = ns.cppyy.gbl.ns3.NetDeviceContainer
-Ipv4InterfaceContainer = ns.cppyy.gbl.ns3.Ipv4InterfaceContainer
 
 ns.cppyy.cppdef(
     """
 #include "CPyCppyy/API.h"
 
-using namespace ns3;
-
-// create a NodeContainer with two nodes
-NodeContainer create_node_pair(NodeContainer nodes, int i, int j) {
-    return NodeContainer(nodes.Get(i), nodes.Get(j));
+// There literally is not any other way to do this
+// I hate having to call Python from C++, but c'est la vie
+void cpp_update_topology() {
+    CPyCppyy::Eval("update_topology()");
 }
 
 // set an interface to be down
@@ -39,297 +27,222 @@ void set_up(NodeContainer c, int index, int interface) {
     ipv4->SetUp(interface);
 }
 
-// print the global routing table
-void print_routing_table() {
-    Ipv4GlobalRoutingHelper globalRouting;
-    Ptr<OutputStreamWrapper> routingStream = Create<OutputStreamWrapper> (&std::cout);
-    globalRouting.PrintRoutingTableAllAt (Seconds(0.1), routingStream );
-}
-
-// get the number of devices
-int get_num_devices(NodeContainer c, int index) {
-    Ptr<Node> n = c.Get(index);
-
-    return n->GetNDevices();
-}
-
-// get the index of a netdevice
-int get_netdevice_node_index(NodeContainer c, int node_index, int device_index) {
-    Ptr<Channel> ch = c.Get(node_index)->GetDevice(device_index)->GetChannel();
-    int i1 = ch->GetDevice(0)->GetNode()->GetId();
-    int i2 = ch->GetDevice(1)->GetNode()->GetId();
-
-    return node_index == i1 ? i2 : i1;
-}
-
-// set the channel delay on a channel
-void set_channel_delay(NodeContainer c, int node_index, int device_index, double seconds) {
-    Ptr<Channel> ch = c.Get(node_index)->GetDevice(device_index)->GetChannel();
+// set the delay on a channel
+void set_channel_delay(NodeContainer c, int index, int interface, double seconds) {
+    Ptr<Channel> ch = c.Get(index)->GetDevice(interface)->GetChannel();
 
     ch->SetAttribute("Delay", TimeValue(Seconds(seconds)));
 }
 
-// set the error rate on a channel
-void set_channel_error(NodeContainer c, int node_index, int device_index, double rate) {
-    Ptr<NetDevice> ch = c.Get(node_index)->GetDevice(device_index);
+// set the channel error
+void set_channel_error(NodeContainer c, int index, int interface, double rate) {
+    Ptr<NetDevice> ch = c.Get(index)->GetDevice(interface);
     Ptr<RateErrorModel> em = CreateObject<RateErrorModel>();
     em->SetAttribute("ErrorRate", DoubleValue(rate));
     em->SetUnit(RateErrorModel::ERROR_UNIT_BIT);
 
     ch->SetAttribute("ReceiveErrorModel", PointerValue(em));
 }
-
-// Schedule seems to require CPP functions
-// This gets around that by calling the python function from CPP
-void cpp_update_topology() {
-    CPyCppyy::Eval("update_topology()");
-}
-"""
+    """
 )
 
-# shorten names of cpp functions
-create_node_pair = ns.cppyy.gbl.create_node_pair
+# C++ classes
+NodeContainer = ns.cppyy.gbl.ns3.NodeContainer
+NetDeviceContainer = ns.cppyy.gbl.ns3.NetDeviceContainer
+Ipv4InterfaceContainer = ns.cppyy.gbl.ns3.Ipv4InterfaceContainer
+
+# C++ functions
 set_down = ns.cppyy.gbl.set_down
 set_up = ns.cppyy.gbl.set_up
-print_routing_table = ns.cppyy.gbl.print_routing_table
-get_num_devices = ns.cppyy.gbl.get_num_devices
-get_netdevice_node_index = ns.cppyy.gbl.get_netdevice_node_index
 set_channel_delay = ns.cppyy.gbl.set_channel_delay
 set_channel_error = ns.cppyy.gbl.set_channel_error
-cpp_update_topology = ns.cppyy.gbl.cpp_update_topology
-
-# global vars (we need global state to allow calling Python function from CPP)
-GLOBAL_TIME = 10000
-GLOBAL_TOPOLOGY = None
-
-# constants
-TIME_STEP = 60
-SIM_LENGTH = 60 * 60 * 24
 
 
-@dataclass
-class Topology:
-    """Topology
-
-    object containing data about Topology
-    (we don't really need this tbh, but I'm not about to rewrite this)
-    """
-
-    nodes: "NodeContainer"
-    num_nodes: int
-    channel_table: "List[List[NetDeviceContainer|None]]"
-    ip_table: "List[List[Ipv4InterfaceContainer|None]]"
+def update_topology():
+    NETWORK.update_topology()
 
 
-@dataclass
-class ConnectionData:
-    """ConnectionData
-
-    object containing data about a connection
-    """
-
-    connected: bool
-    trans_time: float
-    error_rate: float
+class Protocol(Enum):
+    UDP = 1
+    TCP = 2
 
 
-def create_topology() -> Topology:
-    """create_topology
+class Network:
+    def __init__(
+        self,
+        start_time: int,
+        protocol: Protocol,
+        sender_body: str,
+        receiver_body: str,
+        time_step: int = 60,
+        simulation_len: int = 60 * 60 * 24,
+    ) -> None:
+        # assign instance variables
+        self.time = start_time
+        self.protocol = protocol
+        self.time_step = time_step
+        self.simulation_len = simulation_len
 
-    create a network topology from entities
-    """
+        # configure ns-3 options
+        ns.Config.SetDefault(
+            "ns3::Ipv4GlobalRouting::RespondToInterfaceEvents",
+            ns.core.BooleanValue(True),
+        )
 
-    ascii = ns.network.AsciiTraceHelper()
-    stream = ascii.CreateFileStream("network-sim.tr")
+        # setup tracing
+        self.ascii = ns.network.AsciiTraceHelper()
+        self.stream = self.ascii.CreateFileStream("network-sim.tr")
 
-    # get the number of nodes in the network
-    entities = get_stats(0)
-    nodes = ns.network.NodeContainer()
-    num_nodes = len(entities)
-    nodes.Create(num_nodes)
+        # setup the network
+        self.ipv4 = ns.internet.Ipv4AddressHelper()
+        self.__create_nodes()
+        self.__connect_routers()
+        self.__connect_end_devices(sender_body, receiver_body)
+        ns.internet.Ipv4GlobalRoutingHelper.PopulateRoutingTables()
+        self.__install_applications()
 
-    # install internet stack on each node
-    internet = ns.internet.InternetStackHelper()
-    internet.Install(nodes)
+    def run(self):
+        ns.core.LogComponentEnable("OnOffApplication", ns.core.LOG_LEVEL_INFO)
+        ns.core.LogComponentEnable("PacketSink", ns.core.LOG_LEVEL_INFO)
 
-    # setup IPv4
-    ipv4 = ns.internet.Ipv4AddressHelper()
-    ipv4.SetBase("10.0.0.0", "255.255.255.0")
+        global NETWORK
+        NETWORK = self
 
-    # setup channel for each pair of nodes
-    channel_table = []
-    ip_table = []
-    for i, _ in enumerate(entities):
-        channel_row = []
-        ip_row = []
-        for j, _ in enumerate(entities):
-            if j == i:
-                channel_row.append(None)
-                ip_row.append(None)
-            else:
-                np = create_node_pair(nodes, i, j)
+        # schedule topology updates once per time step
+        curr = self.time_step
+        while curr < self.simulation_len:
+            ns.core.Simulator.Schedule(
+                ns.core.Seconds(curr), ns.cppyy.gbl.cpp_update_topology
+            )
+            curr += self.time_step
 
-                p2p = ns.point_to_point.PointToPointHelper()
-                p2p.SetDeviceAttribute("DataRate", ns.core.StringValue("5Mbps"))
-                p2p.EnableAsciiAll(stream)
-                ch = p2p.Install(np)
-                channel_row.append(ch)
+        ns.core.Simulator.Run()
+        ns.core.Simulator.Destroy()
 
-                ip = ipv4.Assign(ch)
-                ip_row.append(ip)
+    def update_topology(self):
+        entities = get_stats(self.time)
 
-        channel_table.append(channel_row)
-        ip_table.append(ip_row)
-
-    # initialize routing database and setup routing tables in the nodes
-    ns.internet.Ipv4GlobalRoutingHelper.PopulateRoutingTables()
-
-    return Topology(
-        nodes=nodes,
-        num_nodes=num_nodes,
-        channel_table=channel_table,
-        ip_table=ip_table,
-    )
-
-
-def install_onoff_app(topology: Topology, index: int, ch_i: int, ch_j: int) -> None:
-    """install_onoff_app
-
-    install an onoff application on a node
-
-    topology - the topology to install on
-    index    - the node to install on
-    ch_i     - index i to send to
-    ch_j     - index j to send to
-    """
-    port = 9  # Discard port (RFC 863)
-    address = topology.ip_table[ch_i][ch_j]
-    if address is None:
-        return
-
-    onoff = ns.applications.OnOffHelper(
-        "ns3::UdpSocketFactory",
-        ns.network.InetSocketAddress(address.GetAddress(1), port).ConvertTo(),
-    )
-
-    # one packet per TIME_STEP
-    rate = 8 / TIME_STEP
-    onoff.SetConstantRate(ns.network.DataRate(f"{rate}kbps"))
-    onoff.SetAttribute("PacketSize", ns.core.UintegerValue(1024))
-
-    apps = onoff.Install(topology.nodes.Get(index))
-    apps.Start(ns.core.Seconds(0.0))
-    apps.Stop(ns.core.Seconds(SIM_LENGTH))
-
-
-def install_sink(topology: Topology, index: int) -> None:
-    """install_sink
-
-    install sink on a given node
-
-    topology - the topology to install on
-    index    - the node to install on
-    """
-    port = 9  # Discard port (RFC 863)
-    sink = ns.applications.PacketSinkHelper(
-        "ns3::UdpSocketFactory",
-        ns.InetSocketAddress(ns.Ipv4Address.GetAny(), port).ConvertTo(),
-    )
-    apps = sink.Install(topology.nodes.Get(index))
-    apps.Start(ns.core.Seconds(0.0))
-    apps.Stop(ns.core.Seconds(SIM_LENGTH))
-
-
-def update_topology() -> None:
-    """update_topology
-
-    update the topology
-    """
-    if GLOBAL_TOPOLOGY is None:
-        return
-
-    global GLOBAL_TIME  # pylint: disable=global-statement
-
-    entities = get_stats(GLOBAL_TIME)
-    for entity in entities:
-        id = entity["id"]  # pylint:disable=redefined-builtin
-        if not entity["can_connect"]:
-            # take down each interface starting from index 1 (index 0 is loopback)
-            for i in range(1, get_num_devices(GLOBAL_TOPOLOGY.nodes, id)):
-                set_down(GLOBAL_TOPOLOGY.nodes, id, i)
-        else:
-            # update the connections
-            # TODO update error rate
-            conns = {}
-            for i, conn in enumerate(entity["connections"]):
-                conns[conn["id"]] = ConnectionData(
-                    connected=conn["connected"],
-                    trans_time=conn["trans_time"],
-                    error_rate=conn["error_rate"],
-                )
-            for i in range(1, get_num_devices(GLOBAL_TOPOLOGY.nodes, id)):
-                conn_id = get_netdevice_node_index(GLOBAL_TOPOLOGY.nodes, id, i)
-                if conn_id in conns and conns[conn_id].connected:
-                    set_up(GLOBAL_TOPOLOGY.nodes, id, i)
-                    set_channel_delay(
-                        GLOBAL_TOPOLOGY.nodes, id, i, conns[conn_id].trans_time
-                    )
-                    set_channel_error(
-                        GLOBAL_TOPOLOGY.nodes, id, i, conns[conn_id].error_rate
-                    )
+        for i in range(0, len(entities) - 1):
+            connections = [-1] * len(entities)
+            for i, conn in enumerate(entities[i]["connections"]):
+                connections[conn["id"]] = i
+            for j in range(i, len(entities)):
+                # since j>i, we know that interface # is the same as id
+                if connections[j] == -1:
+                    set_down(self.routers, i, j)
                 else:
-                    set_down(GLOBAL_TOPOLOGY.nodes, id, i)
+                    details = entities[i]["connections"][connections[j]]
+                    if details["connected"]:
+                        set_channel_delay(self.routers, i, j, details["trans_time"])
+                        # set_channel_delay(self.routers, i, j, 61.399)
+                        set_channel_error(self.routers, i, j, details["error_rate"])
+                        set_up(self.routers, i, j)
+                    else:
+                        set_down(self.routers, i, j)
+        self.time += self.time_step
 
-    # recompute routing tables and update time
-    ns.internet.Ipv4GlobalRoutingHelper.RecomputeRoutingTables()
-    GLOBAL_TIME += TIME_STEP
+    def __create_nodes(self):
+        self.routers = ns.network.NodeContainer()
+        self.sender = ns.network.NodeContainer()
+        self.receiver = ns.network.NodeContainer()
+
+        # map entity names to ids
+        entities = get_stats(0)
+        self.entity_name_map = {}
+        e_id = 0
+        for entity in entities:
+            self.entity_name_map[entity["name"]] = e_id
+            e_id += 1
+
+        # create one router for each entity and two end devices
+        self.num_routers = len(entities)
+        self.routers.Create(self.num_routers)
+        self.sender.Create(1)
+        self.receiver.Create(1)
+
+    def __connect_routers(self):
+        p2p = ns.point_to_point.PointToPointHelper()
+        p2p.SetDeviceAttribute("DataRate", ns.core.StringValue("10Mbps"))
+        p2p.SetChannelAttribute("Delay", ns.core.StringValue("10ms"))
+        p2p.EnableAsciiAll(self.stream)
+
+        self.ipv4.SetBase("10.0.0.0", "255.255.255.0")
+        internet = ns.internet.InternetStackHelper()
+        internet.Install(self.routers)
+
+        for i in range(0, self.num_routers - 1):
+            for j in range(1, self.num_routers):
+                nd = p2p.Install(self.routers.Get(i), self.routers.Get(j))
+                self.ipv4.Assign(nd)
+        self.ipv4.NewNetwork()
+
+    def __connect_end_devices(self, sender_body: str, receiver_body: str):
+        sender_id = self.entity_name_map[sender_body]
+        receiver_id = self.entity_name_map[receiver_body]
+
+        # create a zero delay channel from an end device to its channel
+        p2p = ns.point_to_point.PointToPointHelper()
+        p2p.SetDeviceAttribute("DataRate", ns.core.StringValue("10Mbps"))
+        p2p.SetChannelAttribute("Delay", ns.core.StringValue("0ms"))
+        # p2p.EnableAsciiAll(self.stream)
+        self.sender_to_router = p2p.Install(
+            self.sender.Get(0), self.routers.Get(sender_id)
+        )
+        self.router_to_receiver = p2p.Install(
+            self.routers.Get(receiver_id), self.receiver.Get(0)
+        )
+
+        # install internet stack on the end devices
+        internet = ns.internet.InternetStackHelper()
+        internet.Install(self.sender)
+        internet.Install(self.receiver)
+        self.sender_to_router_address = self.ipv4.Assign(self.sender_to_router)
+        self.ipv4.NewNetwork()
+        self.router_to_receiver_address = self.ipv4.Assign(self.router_to_receiver)
+
+    def __install_applications(self):
+        port = 9
+
+        if self.protocol == Protocol.TCP:
+            factory = "ns3::TcpSocketFactory"
+        elif self.protocol == Protocol.UDP:
+            factory = "ns3::UdpSocketFactory"
+        else:
+            return
+
+        # create sender application
+        onoff = ns.applications.OnOffHelper(
+            factory,
+            ns.network.InetSocketAddress(
+                self.router_to_receiver_address.GetAddress(1), port
+            ).ConvertTo(),
+        )
+        rate = 8 / self.time_step
+        onoff.SetConstantRate(ns.network.DataRate(f"{rate}kbps"))
+        onoff.SetAttribute("PacketSize", ns.core.UintegerValue(1024))
+        apps_onoff = onoff.Install(self.sender.Get(0))
+        apps_onoff.Start(ns.core.Seconds(1.0))
+        apps_onoff.Stop(ns.core.Seconds(self.simulation_len))
+
+        # create receiver application
+        sink = ns.applications.PacketSinkHelper(
+            factory,
+            ns.network.InetSocketAddress(ns.Ipv4Address.GetAny(), port).ConvertTo(),
+        )
+        apps_sink = sink.Install(self.receiver.Get(0))
+        apps_sink.Start(ns.core.Seconds(1.0))
+        apps_sink.Stop(ns.core.Seconds(self.simulation_len))
+
+        # install sink on all routers
+        for i in range(self.num_routers):
+            sink = ns.applications.PacketSinkHelper(
+                factory,
+                ns.network.InetSocketAddress(ns.Ipv4Address.GetAny(), port).ConvertTo(),
+            )
+            apps_sink = sink.Install(self.routers.Get(i))
+            apps_sink.Start(ns.core.Seconds(1.0))
+            apps_sink.Stop(ns.core.Seconds(self.simulation_len))
 
 
-def map_interfaces(topology: Topology):
-    interface_map = []
-    for i in range(topology.num_nodes):
-        for j in range(1, get_num_devices(topology.nodes, i)):
-            interface_map.append([i, j, get_netdevice_node_index(topology.nodes, i, j)])
-
-    return interface_map
-
-
-def simulate() -> None:
-    """simulate
-
-    run a simulation
-    """
-    global GLOBAL_TOPOLOGY  # pylint: disable=global-statement
-
-    # setup routing recomputation
-    ns.Config.SetDefault(
-        "ns3::Ipv4GlobalRouting::RespondToInterfaceEvents", ns.core.BooleanValue(True)
-    )
-
-    # init logging
-    ns.core.LogComponentEnable("OnOffApplication", ns.core.LOG_LEVEL_INFO)
-    ns.core.LogComponentEnable("PacketSink", ns.core.LOG_LEVEL_INFO)
-
-    # initial the topology
-    topology = create_topology()
-    GLOBAL_TOPOLOGY = topology
-    install_onoff_app(topology, 1, 1, 5)
-    install_sink(topology, 5)
-    cpp_update_topology()
-
-    # schedule recomputation of topology once a minute
-    ns.core.Simulator.Schedule(ns.core.Seconds(60.0), cpp_update_topology)
-
-    interface_map = map_interfaces(topology)
-    with open("interface_mapping.csv", "w+") as im_csv:
-        csv_writer = csv.writer(im_csv, delimiter=",")
-        csv_writer.writerow(["Input Node", "Interface", "Output Node"])
-        csv_writer.writerows(interface_map)
-
-    # run the simulator
-    ns.core.Simulator.Run()
-    ns.core.Simulator.Destroy()
-
-
-if __name__ == "__main__":
-    simulate()
+network = Network(10000, Protocol.TCP, "Earth", "Mars", simulation_len=60 * 60)
+network.run()
