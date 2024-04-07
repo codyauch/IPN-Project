@@ -233,16 +233,6 @@ class Network:
         apps_sink.Start(ns.core.Seconds(1.0))
         apps_sink.Stop(ns.core.Seconds(self.simulation_len))
 
-        # install sink on all routers
-        for i in range(self.num_routers):
-            sink = ns.applications.PacketSinkHelper(
-                factory,
-                ns.network.InetSocketAddress(ns.Ipv4Address.GetAny(), port).ConvertTo(),
-            )
-            apps_sink = sink.Install(self.routers.Get(i))
-            apps_sink.Start(ns.core.Seconds(1.0))
-            apps_sink.Stop(ns.core.Seconds(self.simulation_len))
-
 
 network = Network(10000, Protocol.TCP, "Earth", "Mars", simulation_len=60 * 60)
 network.run()
