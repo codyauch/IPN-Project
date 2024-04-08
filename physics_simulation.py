@@ -5,11 +5,11 @@ import json
 C = 299792458.0
 
 # Transmission Frequency (Hz)
-T_FREQ = (30*10)**9
+T_FREQ = 3e10
 
 # sun is at polar coordinates 0, 0
 
-# average sun radius:  695 508 000 m 
+# average sun radius:  695 508 000 m
 
 # average earth orbit: 149 600 000 000 m
 # https://en.wikipedia.org/wiki/Earth%27s_orbit
@@ -39,9 +39,9 @@ T_FREQ = (30*10)**9
 # period: the orbiting period of the object (s)
 # radius: radius of the entity (m)
 # can_connect: if the entity can connect to the interplanetary internet
-# orbital_direction: 1 for counter_clockwise, -1 for clockwise 
+# orbital_direction: 1 for counter_clockwise, -1 for clockwise
 initial_pos = [
-    { # Sun
+    {  # Sun
         "id": 0,
         "name": "Sun",
         "orbital_radius": 0,
@@ -50,7 +50,8 @@ initial_pos = [
         "radius": 695508000,
         "can_connect": False,
         "orbital_direction": 1,
-    },{ # Earth
+    },
+    {  # Earth
         "id": 1,
         "name": "Earth",
         "orbital_radius": 149600000000,
@@ -59,7 +60,8 @@ initial_pos = [
         "radius": 6371000,
         "can_connect": True,
         "orbital_direction": 1,
-    },{ # Mars
+    },
+    {  # Mars
         "id": 2,
         "name": "Mars",
         "orbital_radius": 228000000000,
@@ -68,7 +70,8 @@ initial_pos = [
         "radius": 3389500,
         "can_connect": True,
         "orbital_direction": 1,
-    },{ # Moon
+    },
+    {  # Moon
         "id": 3,
         "name": "The Moon",
         "orbital_radius": 385000000,
@@ -77,27 +80,28 @@ initial_pos = [
         "radius": 1737400,
         "can_connect": False,
         "orbital_direction": 1,
-    },{ # ISS
+    },
+    {  # ISS
         "id": 4,
         "name": "ISS",
-        "orbital_radius": 6371000 + 400000, # Earth radius + 400km
+        "orbital_radius": 6371000 + 400000,  # Earth radius + 400km
         "orb_id": 1,
         "period": 5580,
         "radius": 10,
         "can_connect": True,
         "orbital_direction": 1,
-    },{ # Mars Orbiter
+    },
+    {  # Mars Orbiter
         "id": 5,
         "name": "Mars Orbiter",
-        "orbital_radius": 3389500 + 400000, # Mars radius + 400km
+        "orbital_radius": 3389500 + 400000,  # Mars radius + 400km
         "orb_id": 2,
         "period": 7200,
         "radius": 10,
         "can_connect": True,
         "orbital_direction": 1,
-    }
+    },
 ]
-
 
 
 # assume circular orbits
@@ -105,7 +109,7 @@ initial_pos = [
 # radius is the radius of the orbit
 # period is the period of the orbit
 def calc_orbit_position(init_x, init_y, radius, period, time, orbital_direction):
-    angle = time/period * 360.0 * orbital_direction
+    angle = time / period * 360.0 * orbital_direction
 
     y = math.sin(math.radians(angle)) * radius
     x = math.cos(math.radians(angle)) * radius
@@ -126,14 +130,23 @@ def search_entity_list(id, entities):
 def get_entity_stats(t, entity_stats, stat_list):
     # search the initial list for the orbital id
     orb_id = entity_stats["orb_id"]
-    assert(orb_id >= 0)
+    assert orb_id >= 0
     orbital_stats = search_entity_list(orb_id, stat_list)
 
     # if the location of the orbital id entity has not been calculated, recurse to calculate
     if orbital_stats == -2:
-        orbital_stats = get_entity_stats(t, search_entity_list(orb_id, initial_pos), stat_list)
+        orbital_stats = get_entity_stats(
+            t, search_entity_list(orb_id, initial_pos), stat_list
+        )
 
-    coords = calc_orbit_position(orbital_stats["x"], orbital_stats["y"], entity_stats["orbital_radius"], entity_stats["period"], t, entity_stats["orbital_direction"])
+    coords = calc_orbit_position(
+        orbital_stats["x"],
+        orbital_stats["y"],
+        entity_stats["orbital_radius"],
+        entity_stats["period"],
+        t,
+        entity_stats["orbital_direction"],
+    )
 
     return {
         "id": entity_stats["id"],
@@ -145,7 +158,7 @@ def get_entity_stats(t, entity_stats, stat_list):
         "can_connect": entity_stats["can_connect"],
         "orbital_direction": 1,
         "x": coords["x"],
-        "y": coords["y"]
+        "y": coords["y"],
     }
 
 
@@ -168,7 +181,7 @@ def get_stats(t: int):
                     "can_connect": False,
                     "orbital_direction": 1,
                     "x": 0,
-                    "y": 0
+                    "y": 0,
                 }
             )
         else:
@@ -182,12 +195,19 @@ def get_stats(t: int):
 
 # given two points to make a line, and a point
 # find the closest distance from the point and
-# the line. 
+# the line.
 # equation: https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line#Line_defined_by_two_points
 # algorithm: https://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
 # (line_x1, line_y1), (line_x2, line_y2): 2 points making the line
 # (point_x, point_y): point
-def point_dist_to_line(line_x1: float, line_y1: float, line_x2: float, line_y2: float, point_x: float, point_y: float):
+def point_dist_to_line(
+    line_x1: float,
+    line_y1: float,
+    line_x2: float,
+    line_y2: float,
+    point_x: float,
+    point_y: float,
+):
     a = point_x - line_x1
     b = point_y - line_y1
     c = line_x2 - line_x1
@@ -196,7 +216,7 @@ def point_dist_to_line(line_x1: float, line_y1: float, line_x2: float, line_y2: 
     lenSq = c * c + d * d
     param = -1
 
-    if lenSq != 0: # in case of 0 length line
+    if lenSq != 0:  # in case of 0 length line
         dot = a * c + b * d
         param = dot / lenSq
 
@@ -221,7 +241,7 @@ def point_dist_to_line(line_x1: float, line_y1: float, line_x2: float, line_y2: 
 
 # get the connections between any entities
 # checking if an entity has a direct line of sight with the other entities
-# takes in a data structure stats which has all of the meta data for all of the 
+# takes in a data structure stats which has all of the meta data for all of the
 # entities, including:
 # "id": id of the entity
 # "name": english name of the entity
@@ -233,30 +253,46 @@ def point_dist_to_line(line_x1: float, line_y1: float, line_x2: float, line_y2: 
 # "x": x coordinate in space (m)
 # "y": y coordinate in space (m)
 def get_connections(stats):
-    
+
     # If anyone has a better idea that isnt O(n^3) I am listening
     for entity_sending in stats:
         entity_sending["connections"] = []
 
         for entity_receiving in stats:
             # skips checking if 2 of the 3 identities are the same
-            if entity_receiving["id"] != entity_sending["id"] and entity_receiving["can_connect"] and entity_sending["can_connect"]:
+            if (
+                entity_receiving["id"] != entity_sending["id"]
+                and entity_receiving["can_connect"]
+                and entity_sending["can_connect"]
+            ):
                 blocking = False
 
                 # check if entities are blocking
                 for entity_blocking in stats:
-                    if entity_receiving["id"] != entity_blocking["id"] != entity_sending["id"]:
+                    if (
+                        entity_receiving["id"]
+                        != entity_blocking["id"]
+                        != entity_sending["id"]
+                    ):
                         dist = point_dist_to_line(
-                                entity_sending["x"], entity_sending["y"],
-                                entity_receiving["x"], entity_receiving["y"],
-                                entity_blocking["x"], entity_blocking["y"]
-                            )
-                        
+                            entity_sending["x"],
+                            entity_sending["y"],
+                            entity_receiving["x"],
+                            entity_receiving["y"],
+                            entity_blocking["x"],
+                            entity_blocking["y"],
+                        )
+
                         if dist < entity_blocking["radius"]:
                             blocking = True
 
                 if not blocking:
-                    dist = dist_between_points(entity_receiving["x"], entity_receiving["y"], entity_sending["x"], entity_sending["y"])
+                    dist = dist_between_points(
+                        entity_receiving["x"],
+                        entity_receiving["y"],
+                        entity_sending["x"],
+                        entity_sending["y"],
+                    )
                     trans_time = transmission_time(dist)
                     err_rate = get_error_rate(entity_sending, entity_receiving)
                 else:
@@ -271,10 +307,10 @@ def get_connections(stats):
                         "connected": not blocking,
                         "distance": dist,
                         "trans_time": trans_time,
-                        "error_rate": err_rate
+                        "error_rate": err_rate,
                     }
                 )
-    
+
     return stats
 
 
@@ -299,14 +335,21 @@ def free_space_path_loss(x1, y1, x2, y2) -> float:
     distance = dist_between_points(x1, y1, x2, y2)
 
     # Assuming transmission/reception via isotropic antennas
-    loss_ratio = (wavelength/(4 * math.pi * distance)) ** 2
-    
+    loss_ratio = (wavelength / (4 * math.pi * distance)) ** 2
+
     return loss_ratio
+
 
 # Get the rate of transmission error between two satelites
 def get_error_rate(sender, receiver) -> float:
-    assert("x" in sender.keys() and "y" in sender.keys() and "x" in receiver.keys() and "y" in receiver.keys())
+    assert (
+        "x" in sender.keys()
+        and "y" in sender.keys()
+        and "x" in receiver.keys()
+        and "y" in receiver.keys()
+    )
     return free_space_path_loss(sender["x"], sender["y"], receiver["x"], receiver["y"])
+
 
 # for testing
 # print(json.dumps(get_stats(0), indent=4))
