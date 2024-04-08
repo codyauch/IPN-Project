@@ -1,7 +1,7 @@
 # IPN Project
 
 To run the simulator, install `ns-3` with `pip` and then run
-`python3 network_sim.py`. Note that this project must be run on Linux.
+`python3 network_sim.py <protocol>`. Note that this project must be run on Linux.
 
 `ns-3` does not have a PyPI package on the ARM
 platform. If you are using such a device, you can do the following to build and
@@ -23,5 +23,15 @@ git clone git@github.com:codyauch/IPN-Project.git
 cd ..
 
 # run the simulator
-./ns3 run scratch/IPN-Project/network_sim.py
+./ns3 run scratch/IPN-Project/network_sim.py -- <protocol>
 ```
+
+## Results
+
+Each protocol was run for one hour (3600 seconds) at 1 Mbps being transmitted.
+
+| Protocol | Send (bytes) | Receive (bytes) | Success Rate (%) |
+|---|---|---|---|
+| TCP New Reno | 81754112 | 81754112 | 100 |
+| TCP | 81476608 | 81476608 | 100 |
+| UDP | 449874944 | 435843072 | 96.8 |

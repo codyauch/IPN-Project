@@ -1,5 +1,6 @@
 from enum import Enum
 import json
+import sys
 from ns import ns
 from physics_simulation import get_stats
 
@@ -92,7 +93,7 @@ class Network:
         sender_body: str,
         receiver_body: str,
         time_step: int = 60,
-        simulation_len: int = 60 * 60 * 24,
+        simulation_len: int = 60 * 60,
     ) -> None:
         # assign instance variables
         self.time = start_time
@@ -185,7 +186,7 @@ class Network:
 
     def __connect_routers(self):
         p2p = ns.point_to_point.PointToPointHelper()
-        p2p.SetDeviceAttribute("DataRate", ns.core.StringValue("10Mbps"))
+        p2p.SetDeviceAttribute("DataRate", ns.core.StringValue("1Mbps"))
         p2p.SetChannelAttribute("Delay", ns.core.StringValue("10ms"))
         p2p.EnableAsciiAll(self.stream)
 
@@ -240,8 +241,7 @@ class Network:
                 self.router_to_receiver_address.GetAddress(1), port
             ).ConvertTo(),
         )
-        rate = 8 / self.time_step
-        onoff.SetConstantRate(ns.network.DataRate(f"{rate}kbps"))
+        onoff.SetConstantRate(ns.network.DataRate(f"1Mbps"))
         onoff.SetAttribute("PacketSize", ns.core.UintegerValue(1024))
         apps_onoff = onoff.Install(self.sender.Get(0))
         apps_onoff.Start(ns.core.Seconds(1.0))
@@ -257,5 +257,35 @@ class Network:
         apps_sink.Stop(ns.core.Seconds(self.simulation_len))
 
 
-network = Network(10000, Protocol.NEW_RENO, "Earth", "Mars", simulation_len=60 * 60 * 24)
-network.run()
+def main():
+    if len(sys.argv) < 2:
+        print("Protocol not specified")
+        sys.exit(1)
+    elif sys.argv[1] == "UDP":
+        protocol = Protocol.UDP
+    elif sys.argv[1] == "TCP":
+        protocol = Protocol.TCP
+    elif sys.argv[1] == "NewReno":
+        protocol = Protocol.NEW_RENO
+    else:
+        print(f"Protocol {sys.argv[1]} is not supported")
+        sys.exit(1)
+
+    network = Network(10000, protocol, "Earth", "Mars")
+    network.run()
+
+
+if __name__=="__main__":
+    main()
+
+# 3600 seconds
+# ----------------------------
+# TCP New Reno snd     81754112 bytes
+# TCP New Reno rcv     81754112 bytes
+# TCP New Reno success      100 %
+# TCP snd              81476608 bytes
+# TCP rcv              81476608 bytes
+# TCP success               100 %
+# UDP snd             449874944 bytes
+# UDP rcv             435843072 bytes
+# UDP success              96.8 %
