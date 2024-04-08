@@ -1,5 +1,6 @@
 import math
 import json
+import sys
 
 # Speed of light m/s
 C = 299792458.0
@@ -348,7 +349,22 @@ def get_error_rate(sender, receiver) -> float:
         and "x" in receiver.keys()
         and "y" in receiver.keys()
     )
-    return free_space_path_loss(sender["x"], sender["y"], receiver["x"], receiver["y"])
+
+    # Calculate error rate based on FSPL
+    error_rate = free_space_path_loss(sender["x"], sender["y"], receiver["x"], receiver["y"])
+
+    # Check if we're in 'high_error' mode
+    if 'high_error' in sys.argv:
+        scaling = 10
+
+        # Check if a specific scaling factor was specified
+        if sys.argv.index('high_error') < len(sys.argv)-1:
+            scaling = int(sys.argv[sys.argv.index('high_error')+1])
+
+        # Increase error rate by 10 orders of magnitude, up to 100%
+        error_rate = min(error_rate*(10**scaling) , 1)
+
+    return error_rate 
 
 
 # for testing
