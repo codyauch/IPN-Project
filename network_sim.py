@@ -51,6 +51,14 @@ void set_channel_error(NodeContainer c, int index, int interface, double rate) {
 
     ch->SetAttribute("ReceiveErrorModel", PointerValue(em));
 }
+
+// void turn on new reno
+void new_reno() {
+    Config::SetDefault(
+        "ns3::TcpL4Protocol::SocketType",
+        TypeIdValue(TypeId::LookupByName("ns3::TcpNewReno"))
+    );
+}
     """
 )
 
@@ -73,6 +81,7 @@ def update_topology():
 class Protocol(Enum):
     UDP = 1
     TCP = 2
+    NEW_RENO = 3
 
 
 class Network:
@@ -96,6 +105,9 @@ class Network:
             "ns3::Ipv4GlobalRouting::RespondToInterfaceEvents",
             ns.core.BooleanValue(True),
         )
+        if protocol == Protocol.NEW_RENO:
+            ns.cppyy.gbl.new_reno()
+            self.protocol = Protocol.TCP
 
         # setup tracing
         self.ascii = ns.network.AsciiTraceHelper()
@@ -245,5 +257,5 @@ class Network:
         apps_sink.Stop(ns.core.Seconds(self.simulation_len))
 
 
-network = Network(10000, Protocol.TCP, "Earth", "Mars", simulation_len=60 * 60 * 24)
+network = Network(10000, Protocol.NEW_RENO, "Earth", "Mars", simulation_len=60 * 60 * 24)
 network.run()
