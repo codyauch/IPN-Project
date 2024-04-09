@@ -1,6 +1,5 @@
 import math
 import json
-import sys
 
 # Speed of light m/s
 C = 299792458.0
@@ -164,7 +163,7 @@ def get_entity_stats(t, entity_stats, stat_list):
 
 
 # returns information for all entities at time time t
-def get_stats(t: int):
+def get_stats(t: int, high_error: bool = True):
 
     stats = []
 
@@ -189,7 +188,7 @@ def get_stats(t: int):
             entity_stats = get_entity_stats(t, entity, stats)
             stats.append(entity_stats)
 
-    stats = get_connections(stats)
+    stats = get_connections(stats, high_error)
 
     return stats
 
@@ -253,7 +252,7 @@ def point_dist_to_line(
 # "can_connect": entity able to connect to the interplanetary internet
 # "x": x coordinate in space (m)
 # "y": y coordinate in space (m)
-def get_connections(stats):
+def get_connections(stats, high_error):
 
     # If anyone has a better idea that isnt O(n^3) I am listening
     for entity_sending in stats:
@@ -295,7 +294,7 @@ def get_connections(stats):
                         entity_sending["y"],
                     )
                     trans_time = transmission_time(dist)
-                    err_rate = get_error_rate(entity_sending, entity_receiving)
+                    err_rate = get_error_rate(entity_sending, entity_receiving, high_error)
                 else:
                     dist = None
                     trans_time = None
@@ -342,7 +341,7 @@ def free_space_path_loss(x1, y1, x2, y2) -> float:
 
 
 # Get the rate of transmission error between two satelites
-def get_error_rate(sender, receiver) -> float:
+def get_error_rate(sender, receiver, high_error) -> float:
     assert (
         "x" in sender.keys()
         and "y" in sender.keys()
@@ -354,15 +353,9 @@ def get_error_rate(sender, receiver) -> float:
     error_rate = free_space_path_loss(sender["x"], sender["y"], receiver["x"], receiver["y"])
 
     # Check if we're in 'high_error' mode
-    if 'high_error' in sys.argv:
-        scaling = 10
-
-        # Check if a specific scaling factor was specified
-        if sys.argv.index('high_error') < len(sys.argv)-1:
-            scaling = int(sys.argv[sys.argv.index('high_error')+1])
-
+    if high_error:
         # Increase error rate by 10 orders of magnitude, up to 100%
-        error_rate = min(error_rate*(10**scaling) , 1)
+        error_rate = min(error_rate*(10**10) , 1)
 
     return error_rate 
 
