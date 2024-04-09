@@ -10,3 +10,6 @@ venv
 *.fls
 *.synctex.gz
 network-sim.tr
+*.auctex-auto
+*.blg
+*.run.xml
