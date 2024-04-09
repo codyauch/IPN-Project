@@ -120,7 +120,14 @@ easier to decouple the applications from the network topology and allowed us to
 programatically create arbitrary topologies.
 
 NS-3 is a useful library, but we did run into a number of problems over the
-course of our implementation of our simulation. The first problem came when we first tried to compile the library itself and ran into a bug in the build script that caused all executables to fail to run if there was the word ``scratch'' anywhere in the path due to a specific subdirectory of NS-3 which also happens to be called ``scratch''. When first testing it out, one of us had put NS-3 into a directory that happened to contain that word. We made a pull request to fix this issue and it was merged by the NS-3 maintainers which allowed us to continue.
+course of our implementation of our simulation. The first problem came when we
+first tried to compile the library itself and ran into a bug in the build script
+that caused all executables to fail to run if there was the word ``scratch''
+anywhere in the path due to a specific subdirectory of NS-3 which also happens
+to be called ``scratch''. When first testing it out, one of us had put NS-3 into
+a directory that happened to contain that word. We made a pull request to fix
+this issue and it was merged by the NS-3 maintainers which allowed us to
+continue.
 
 The next issue we ran into was that we had decided to use the Python bindings to
 allow us to easily use Python for the physics simulation. This was a mistake.
