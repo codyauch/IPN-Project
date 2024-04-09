@@ -13,3 +13,6 @@ network-sim.tr
 *.auctex-auto
 *.blg
 *.run.xml
+*.bbl
+*.bcf
+/paper/*.out
