@@ -113,6 +113,7 @@ def calculate_statistics(df):
 
 
 def graph_stats(df):
+    plt.style.use('ggplot')
     # graph the average message time in transit
     # get max and min time
     min = math.floor(df["time_queued"].min())
@@ -120,19 +121,23 @@ def graph_stats(df):
 
     # create time splits
     # 1000 seconds time step
-    time_step = np.arange(min, max, 1000)
-    x = np.arange(min + 500, max - 500, 1000)
+    time_delta = 1000
+    time_step = np.arange(min, max, time_delta)
+    x = np.arange(min + time_delta/2, max - time_delta/2, time_delta)
 
     grouped_df = df.groupby(pd.cut(df["time_dequeued"], time_step, include_lowest=True)).mean()
 
-    print("time step", len(time_step), min, max)
-    print(len(grouped_df))
-
     plt.plot(x, grouped_df["total_time"])
+    plt.xlabel("time (ms)")
+    plt.ylabel("total message time (ms)")
+    plt.title("Average message time in transit over time")
     plt.show()
     plt.clf()
 
     plt.plot(x, grouped_df["bytes"])
+    plt.xlabel("time (ms)")
+    plt.ylabel("bytes")
+    plt.title("Average message size")
     plt.show()
     plt.clf()
 
@@ -140,12 +145,8 @@ def graph_stats(df):
 def get_graphs():
     print("Create graphs")
 
-    # try:
     df = pd.read_csv("data/message_stats.csv")
     graph_stats(df)
-    # except Exception as e:
-    #     print("ran into error, likely could not find file")
-    #     print(e)
 
 
 def get_statistics():
