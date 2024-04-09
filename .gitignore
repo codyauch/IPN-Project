@@ -14,3 +14,5 @@ network-sim.tr
 *.blg
 *.run.xml
 *.bbl
+*.bcf
+/paper/*.out

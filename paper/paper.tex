@@ -2,6 +2,7 @@
 
 \usepackage{microtype}
 \usepackage{biblatex}
+\usepackage{hyperref}
 
 \addbibresource{paper.bib}
 
@@ -24,79 +25,102 @@
 In the past decade interest in returning back to space has increased
 internationally. Many organizations have started sending remote vehicles into
 space for the first time~%\cite{(indian space program, spaceX, ect)}
-and there
-are talks of a permanent lunar base being created. With an increased amount of
-satellites and potentially permanent bases outside of Earths orbit, the demand
-on the interplanetary network (IPN) is increased. The IPN has a series of unique
-challenges such as a high amount of error, constantly changing network topology,
-and long propagation delay. The solution to these problems is implementing a
-delay tolerant network. While space organizations have maintained the IPN with a
-set of standard protocols, these may not be sufficient for an expanding network.
-The simulator proposed shows how an IPN can handle different stages of
-development of an IPN as well as increased throughput requirements.
-Before these technological changes can be implemented simulations need to be created to 
-lower the risk of failure given the high cost of failure. Often satellites will need to be in operation for years 
-or even decades. The hardware and software in satellites can often not be updated very well. Thus it will be very 
-relevant to investigate these issues well before they are needed. 
+and there are talks of a permanent lunar base being created. With an increased
+amount of satellites and potentially permanent bases outside of Earths orbit,
+the demand on the interplanetary network (IPN) is increased. The IPN has a
+series of unique challenges such as a high amount of error, constantly changing
+network topology, and long propagation delay. The solution to these problems is
+implementing a delay tolerant network. While space organizations have maintained
+the IPN with a set of standard protocols, these may not be sufficient for an
+expanding network. The simulator proposed shows how an IPN can handle different
+stages of development of an IPN as well as increased throughput requirements.
+Before these technological changes can be implemented simulations need to be
+created to lower the risk of failure given the high cost of failure. Often
+satellites will need to be in operation for years or even decades. The hardware
+and software in satellites can often not be updated very well. Thus it will be
+very relevant to investigate these issues well before they are needed.
 
 
 \section{Previous Work}
 
-In their 2017 Masters Thesis, Md Monjurul Islam Khan \cite{Khan2017} from University of Manitoba wrote on how 
-to create a satellite network
-simulation based on ns3. They used a point to point ns3 module to create a network of 2 levels of orbiting 
-satellites and fixed points on the earth which acts as uplinks to the network. The paper analyzed TCP 
-HighSpeed against TCP Vegas slow start. However this paper stops at expanding the network beyond earth orbit, 
-and rather focuses on Earth orbit communication.  
+In their 2017 Masters Thesis, Md Monjurul Islam Khan~\cite{Khan2017} from
+University of Manitoba wrote on how to create a satellite network simulation
+based on ns3. They used a point to point ns3 module to create a network of 2
+levels of orbiting satellites and fixed points on the earth which acts as
+uplinks to the network. The paper analyzed TCP HighSpeed against TCP Vegas slow
+start. However this paper stops at expanding the network beyond earth orbit, and
+rather focuses on Earth orbit communication.
 
-SNS3 is a simulation library which uses NS3 as a basis to create a framework which to build simulations for 
-geostationary satellites in the european continent. It does not expand to an interplanetary network.
-\cite{10.4108/icst.simutools.2014.254631}
+SNS3 is a simulation library which uses NS3 as a basis to create a framework
+which to build simulations for geostationary satellites in the European
+continent. It does not expand to an interplanetary network~\cite{Puttonen2014}.
 
-For non simulation work done on the interplanetary internet, the leading authority is Consultative Committee for 
-Space Data Systems (CCSDS). \cite{CCSDS.org} They maintain and publish the standards for interplanetary internet, including 
-the SCPS TP, a reliable transport protocol used for delay tolerant networks when UDP or TCP are not effective. \cite{40565_2004}
-Active since 1982 and managed in collaboration with several national and international space organizations. A 
-contemporary simulation of a current interplanetary network or earth orbit network would follow the protocols and
-standards laid out by CCSDS.
+For non simulation work done on the interplanetary internet, the leading
+authority is Consultative Committee for Space Data Systems
+(CCSDS)~\cite{CCSDS.org}. They maintain and publish the standards for
+interplanetary internet, including the SCPS TP, a reliable transport protocol
+used for delay tolerant networks when UDP or TCP are not
+effective.~\cite{Keith2004} Active since 1982 and managed in collaboration with
+several national and international space organizations. A contemporary
+simulation of a current interplanetary network or earth orbit network would
+follow the protocols and standards laid out by CCSDS.
 
-Several public github repos with satellite simulators can be found. 
-$\text{https://github.com/szymonwieloch/DTN/tree/master}$
-$\text{https://goodingc.github.io/ipn_sim/web-app/}$. Both of these limit themselves to earth orbit simulations. 
+Several public GitHub repositories with satellite simulators can be
+found, for instance:
+\begin{itemize}
+\item\url{https://github.com/szymonwieloch/DTN/tree/master}
+\item\url{https://goodingc.github.io/ipn_sim/web-app/}
+\end{itemize}
+Both of these limit themselves to earth orbit simulations.
 
 \section{Interplanetary Internet and Background}
 
-An interplanetary network is simply a network which where the nodes are distributed across the surface or orbits of 
-different planets. In the year of 2024 the current interplanetary is limited to Mars, Earth, the Moon, and satellites 
-orbiting the sun. The interplanetary network is also expanded to deep space satellites, like the voyager probes. A sample 
-message path across the network could be that a message is passed from a on earth station through satellite dish to a 
-earth orbiting satellite, then when it has direct line of sight with the Mars MAVEN sends the message. MAVEN then relays the 
-message to a Mars rover like Odyssey. This description hides the complexity which arises in an interplanetary network. 
+An interplanetary network is simply a network which where the nodes are
+distributed across the surface or orbits of different planets. In the year of
+2024 the current interplanetary is limited to Mars, Earth, the Moon, and
+satellites orbiting the sun. The interplanetary network is also expanded to deep
+space satellites, like the voyager probes. A sample message path across the
+network could be that a message is passed from a on earth station through
+satellite dish to a earth orbiting satellite, then when it has direct line of
+sight with the Mars MAVEN sends the message. MAVEN then relays the message to a
+Mars rover like Odyssey. This description hides the complexity which arises in
+an interplanetary network.
 
-In a traditional network a majority of the network will happen over a wired connection. This means that the error is relatively 
-low. This is no longer the case in the case of satellites sending messages over potentially millions of kilometers. 
-Atmosphere in the Earth orbit, solar radiation, and dust cause increased error in sending the message between entities. 
-Inverse square law dictates that over these large periods the energy needed to send the message so that it can be 
-read at its destination. Even the doppler effect is needed to be accounted for to tune into radio frequencies on the ISS.
-High error means that sending a message can no longer be assumed to be sent reliably and has to be compensated for. 
-Beyond high error, large distances between entities and the physical limitation that messages cannot travel faster 
-than the speed of light. Light, or any other energy takes 8 minutes to get from the Sun to Earth, and thus for a round trip 
-will take 16 minutes to complete a simple handshake, given that the messages were sent correctly.
+In a traditional network a majority of the network will happen over a wired
+connection. This means that the error is relatively low. This is no longer the
+case in the case of satellites sending messages over potentially millions of
+kilometers. Atmosphere in the Earth orbit, solar radiation, and dust cause
+increased error in sending the message between entities. Inverse square law
+dictates that over these large periods the energy needed to send the message so
+that it can be read at its destination. Even the Doppler effect is needed to be
+accounted for to tune into radio frequencies on the ISS. High error means that
+sending a message can no longer be assumed to be sent reliably and has to be
+compensated for. Beyond high error, large distances between entities and the
+physical limitation that messages cannot travel faster than the speed of light.
+Light, or any other energy takes 8 minutes to get from the Sun to Earth, and
+thus for a round trip will take 16 minutes to complete a simple handshake, given
+that the messages were sent correctly.
 
-Other than physical limitations a interplanetary network has a rapidly changing topology at anytime. For instance satellites 
-which orbit planets can have their field of view blocked as they move over the horizon. While terrestrial networks also have 
-rapidly changing networks at the edges, but the difference is that the core of the network is stable traditionally. Where 
-depending on the hour, day, year, the core of the interplanetary network can change drastically. To be able to connect to the 
-network there are no well known places to access the network, except for Earth. 
+Other than physical limitations a interplanetary network has a rapidly changing
+topology at anytime. For instance satellites which orbit planets can have their
+field of view blocked as they move over the horizon. While terrestrial networks
+also have rapidly changing networks at the edges, but the difference is that the
+core of the network is stable traditionally. Where depending on the hour, day,
+year, the core of the interplanetary network can change drastically. To be able
+to connect to the network there are no well known places to access the network,
+except for Earth.
 
-To combat these challenges several protocols have been created. The SCPS TP is a transport protocol which is used on the network 
-layer. UDP is used in the lowest reliable connections between nodes, and TCP is used in the most reliable network 
-conditions. When a reliable and efficient method of network transportation is needed, then SCPS TP is used. It is a modified 
-version of TCP which uses a slow start protocol, reduced handshakes, reliable data transfer with reduced confirmations. Other 
-protocols like store and load, and licklider are used to also overcome these problems.
+To combat these challenges several protocols have been created. The SCPS TP is a
+transport protocol which is used on the network layer. UDP is used in the lowest
+reliable connections between nodes, and TCP is used in the most reliable network
+conditions. When a reliable and efficient method of network transportation is
+needed, then SCPS TP is used. It is a modified version of TCP which uses a slow
+start protocol, reduced handshakes, reliable data transfer with reduced
+confirmations. Other protocols like store and load, and Licklider are used to
+also overcome these problems.
 
-The rest of the paper remains to simulate these unique challenges, as well as see in what conditions do the current protocols 
-work.
+The rest of the paper remains to simulate these unique challenges, as well as
+see in what conditions do the current protocols work.
 
 \section{Methodology}
 
