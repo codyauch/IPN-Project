@@ -366,7 +366,13 @@ average time being queued of 21.92 seconds, and an average message time in
 transit 261.72 seconds. The average amount of data sent was 1052.0 bytes. Notice
 the scientific notation in the corner of the graph.
 
-We believe that UDP sends a large number of messages at the start that are all queued, processed, and sent. After those messages are sent, the next batch is prepared immediately. This curve could be caused by the queuing delay from the large number of messages that are sent. UDP does not wait for messages to be received and will therefore create a large backlog which slows everything down when dequeuing messages.
+We believe that UDP sends a large number of messages at the start that are all
+queued, processed, and sent. After those messages are sent, the next batch is
+prepared immediately. This curve could be caused by the queuing delay from the
+large number of messages that are sent. UDP does not wait for messages to be
+received and will therefore create a large backlog which slows everything down
+when dequeuing messages. We see gap between lines which seems to be time
+required to send the messages to the planet from an orbiting body.
 
 \subsection{TCP}
 
