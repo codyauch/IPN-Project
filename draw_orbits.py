@@ -28,7 +28,7 @@ def animate(i):
     t =  2 * SECONDS_IN_DAY * i  
 
     # slow down timer to see moon orbit earth
-    # t = 3600 * i
+    t = 360 * i
 
     x_data = []
     y_data = []
@@ -43,8 +43,8 @@ def animate(i):
         y_data.append(datum["y"])
 
     # uncomment to see moon orbit earth
-    # ax.set_xlim([data[1]["x"] - EARTH_ORBIT_RAD, data[1]["x"] + EARTH_ORBIT_RAD])
-    # ax.set_ylim([data[1]["y"] - EARTH_ORBIT_RAD, data[1]["y"] + EARTH_ORBIT_RAD]) 
+    ax.set_xlim([data[1]["x"] - EARTH_ORBIT_RAD, data[1]["x"] + EARTH_ORBIT_RAD])
+    ax.set_ylim([data[1]["y"] - EARTH_ORBIT_RAD, data[1]["y"] + EARTH_ORBIT_RAD]) 
 
     # add it to animation
     scatter.set_offsets(np.column_stack((x_data, y_data)))  
@@ -53,8 +53,11 @@ def animate(i):
 
 # bootstrap for animated python file
 def animated():
-    anim = animation.FuncAnimation(fig, animate, frames = 5000, interval = 20, blit = True)
-    plt.show()
+    anim = animation.FuncAnimation(fig, animate, frames = 500, interval = 20, blit = True)
+    # plt.show()
+
+    writergif = animation.PillowWriter(fps=30) 
+    anim.save("data/orbit_earth.gif", writer=writergif)
 
 
 # non animated daily iteration through drawing
