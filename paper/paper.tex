@@ -169,10 +169,11 @@ interactions which are removed it does still simulate satellites having to form
 a network around the entity it is orbiting, it just requires less satellites
 then if it needed to form a 3-D network.
 
-Messages between entities were assumed to be sent at the speed of light, as all
-forms of radio, lasers, or other wireless messages all are sent at the speed of
-light. Since propagation delay is much higher then terrestrial networks, other
-delays (TODO specify which delays) were ignored as being negligible.
+Messages between entities were assumed to be sent at the speed of light in a vacuum, as all
+forms of radio, lasers, or other wireless messages are forms of electromagnetic radiation,
+and thus travel at the speed of
+light. Since the propagation delay in an IPN is much higher than in terrestrial networks, other
+delays such as queuing or processing delays were ignored as being negligible.
 
 Based on these simplifications, a physical simulation with several goals. To
 calculate if a line of sight could be made between two communicating entities,
@@ -182,14 +183,14 @@ sent. Line of sight was achieved using simple geometry calculations. (See
 appendix) All entities are able to block signals if the ray passes through the
 radius of the entity. One of the largest factors contributing to transmission
 error is the distance travelled by the electromagnetic signal between
-transmitting and receiving nodes. By generalizing Friis' transmission formula
+transmitting and receiving nodes. By generalizing Friis' transmission formula\cite{Friis}
 for isotropic emitters and receivers, we can obtain the ratio of signal
 intensity received to signal intensity transmitted, known as Free Space Path
 Loss (FSPL). We can use FSPL as our transmission error rate, giving the
 following expression: $Error Rate = {(\frac{4 \pi d}{\lambda})}^2$ where $d$ is
 the distance between nodes in metres and $\lambda$ is the wavelength of the
 electromagnetic wave used in transmission. As much of space communications
-utilizes the Ka-band of frequencies (27--40 GHz) we opted to use a transmission
+utilizes the Ka-band of frequencies (27--40 GHz)\cite{Morabito_Hastrup} we opted to use a transmission
 frequency of 30Ghz. The transmission wavelength can be then calculated according
 to $\lambda = \frac{c}{f}$, where $c$ is the speed of light and $f$ is the
 transmission frequency, giving a transmission wavelength of about 9.99~mm.
