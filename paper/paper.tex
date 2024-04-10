@@ -366,13 +366,35 @@ average time being queued of 21.92 seconds, and an average message time in
 transit 261.72 seconds. The average amount of data sent was 1052.0 bytes. Notice
 the scientific notation in the corner of the graph.
 
-We believe that UDP sends a large number of messages at the start that are all
-queued, processed, and sent. After those messages are sent, the next batch is
-prepared immediately. This curve could be caused by the queuing delay from the
-large number of messages that are sent. UDP does not wait for messages to be
-received and will therefore create a large backlog which slows everything down
-when dequeuing messages. We see gap between lines which seems to be time
-required to send the messages to the planet from an orbiting body.
+The message size is the same across all of the messages. This makes sense as the message size do not need to be different across different messages. This is different compared to TCP and New Reno.
+
+On the left side of the graph before approximately $t = 25000$ this is where
+the planet most likely has a direct path between Earth and Mars. This has a
+steady pattern of a batch of messages are queued, they are sent, and after they
+are sent the next batch of messages are queued, and calculated the propagation
+delay at the time that it is queued. This leads to the clusters which can be seen.
+The curvature of the delay is most likely attributed to the movement of Earth
+relative to Mars, that is that they are getting closer together. Queueing delay is likely small in this section suggested by the tight groupings.
+
+At approximately time $t = 25000$ the direct path between Earth and Mars is
+blocked. This means that the messages have to be routed through a secondary
+satellite. The vertical gap between the horizontal lines is roughly 0.001
+seconds. This is the same time as it takes for a message to take for a message
+to send between Earth and the ISS and similarly between Mars and the Mars
+Orbiter. The reason for the multiple horizontal lines is that messages may be
+passed several times between the planet and its satellite before it is finally
+delivered across the large propagation delay between the planets Earth and Mars.
+The propagation delay could be seen through the length of the horizontal lines.
+This is representative of the time it takes to clear each batch when it is sent.
+Once an entire batch is sent it will re-calculate the propagation delay which
+will then be represented in new different horizontal lines. The long lines show
+that there was a large spike in queuing delay as the topology changed which
+became smaller as it cleared. The curvature of this curve likely represents the
+change in the relative distance between the satellites orbiting Earth and Mars
+becoming further apart. This is clear here due to the extremely small variation
+in propagation delay.
+
+This analysis cannot be 100\% verified due to the data mined from NS-3 did not give a ton of information about the messages which were sent on our simulated network.
 
 \subsection{TCP}
 
