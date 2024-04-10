@@ -47,3 +47,4 @@ Each protocol was run for one hour (3600 seconds) at 1 Mbps being transmitted.
 | TCP New Reno | 81754112 | 81754112 | 100 |
 | TCP | 81476608 | 81476608 | 100 |
 | UDP | 449874944 | 435843072 | 96.8 |
+
