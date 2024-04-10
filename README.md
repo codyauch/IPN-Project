@@ -1,7 +1,13 @@
 # IPN Project
 
-To run the simulator, install `ns-3` with `pip` and then run
+## Generating Traces
+
+### x86
+
+To run the simulator, install `ns-3`, `numpy`, `matplotlib`, and `pandas` with `pip` and then run
 `python3 network_sim.py <protocol>`. Note that this project must be run on Linux.
+
+### ARM
 
 `ns-3` does not have a PyPI package on the ARM
 platform. If you are using such a device, you can do the following to build and
@@ -25,6 +31,12 @@ cd ..
 # run the simulator
 ./ns3 run scratch/IPN-Project/network_sim.py -- <protocol>
 ```
+
+## Running analysis
+
+A file will generated called `network_sim.tr` in the previous step. Run
+`python3 process_data.py network_sim.tr` to get graphs and stats on that
+data.
 
 ## Results
 
