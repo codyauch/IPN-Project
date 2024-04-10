@@ -17,7 +17,16 @@
 \maketitle
 
 \begin{abstract}
-    TODO insert abstract here
+  This paper discusses interplanetary networks, the challenges that can arise
+  from them that make them a unique challenge compared to shorter-range computer
+  networks, and the protocols that can be used in this type of network. In
+  addition, we look at how one can use conventional network simulators to test
+  interplanetary network implementations. We used the network simulator
+  NS-3~\cite{ns-3} to test various transport layer protocols against each other
+  in a network topology that we designed in the network simulator to emulate
+  long-distance communications. Using this network simulation, we were able to
+  compare UDP, TCP, and TCP New Reno protocols against each other to see how
+  they each performed across such large distances with high delays.
 \end{abstract}
 
 \section{Introduction}
@@ -138,14 +147,14 @@ orbits are oval shaped, with the two focal points. A result of this assumption
 is the elimination of any difference in orbital speed due to Kepler's third law.
 The orbital radius was chosen by taking the average orbital radius of the real
 life celestial bodies. For example Earth's average orbital radius is 149.6
-billion meters~\cite{}, and therefore orbits around the sun in a circular orbit
-of radius 149.6 billion meters. Another result of this assumption is that orbits
-are considered to be centered around the body which it orbits. The Mars orbit
-has a focal point that is further in space, making it more oval shaped than the
-earth orbit.~\cite{} While this could make changes to a simulated network in
-some very specific situations, the primary behaviour of a solar system is
-maintained, like retrograde orbits, periodical alignment, predictable behaviour,
-and recursive orbits of sub orbiting object.
+billion meters~\cite{nasa_earth}, and therefore orbits around the sun in a
+circular orbit of radius 149.6 billion meters. Another result of this assumption
+is that orbits are considered to be centered around the body which it orbits.
+The Mars orbit has a focal point that is further in space, making it more oval
+shaped than the earth orbit.~\cite{nasa_mars} While this could make changes to a
+simulated network in some very specific situations, the primary behaviour of a
+solar system is maintained, like retrograde orbits, periodical alignment,
+predictable behaviour, and recursive orbits of sub orbiting object.
 
 All entities are assumed to have a circular shape, with a constant radius. Due
 to the scale of the objects, both large and small, this has a very minor effect.
@@ -160,10 +169,11 @@ interactions which are removed it does still simulate satellites having to form
 a network around the entity it is orbiting, it just requires less satellites
 then if it needed to form a 3-D network.
 
-Messages between entities were assumed to be sent at the speed of light, as all
-forms of radio, lasers, or other wireless messages all are sent at the speed of
-light. Since propagation delay is much higher then terrestrial networks, other
-delays (TODO specify which delays) were ignored as being negligible.
+Messages between entities were assumed to be sent at the speed of light in a
+vacuum, as all forms of radio, lasers, or other wireless messages are forms of
+electromagnetic radiation, and thus travel at the speed of light. Since the
+propagation delay in an IPN is much higher than in terrestrial networks, other
+delays such as queuing or processing delays were ignored as being negligible.
 
 Based on these simplifications, a physical simulation with several goals. To
 calculate if a line of sight could be made between two communicating entities,
@@ -173,16 +183,17 @@ sent. Line of sight was achieved using simple geometry calculations. (See
 appendix) All entities are able to block signals if the ray passes through the
 radius of the entity. One of the largest factors contributing to transmission
 error is the distance travelled by the electromagnetic signal between
-transmitting and receiving nodes. By generalizing Friis' transmission formula
-for isotropic emitters and receivers, we can obtain the ratio of signal
-intensity received to signal intensity transmitted, known as Free Space Path
-Loss (FSPL). We can use FSPL as our transmission error rate, giving the
-following expression: $Error Rate = {(\frac{4 \pi d}{\lambda})}^2$ where $d$ is
-the distance between nodes in metres and $\lambda$ is the wavelength of the
-electromagnetic wave used in transmission. As much of space communications
-utilizes the Ka-band of frequencies (27--40 GHz) we opted to use a transmission
-frequency of 30Ghz. The transmission wavelength can be then calculated according
-to $\lambda = \frac{c}{f}$, where $c$ is the speed of light and $f$ is the
+transmitting and receiving nodes. By generalizing Friis' transmission
+formula\cite{Friis} for isotropic emitters and receivers, we can obtain the
+ratio of signal intensity received to signal intensity transmitted, known as
+Free Space Path Loss (FSPL). We can use FSPL as our transmission error rate,
+giving the following expression: $Error Rate = {(\frac{4 \pi d}{\lambda})}^2$
+where $d$ is the distance between nodes in metres and $\lambda$ is the
+wavelength of the electromagnetic wave used in transmission. As much of space
+communications utilizes the Ka-band of frequencies (27--40
+GHz)\cite{Morabito_Hastrup} we opted to use a transmission frequency of 30Ghz.
+The transmission wavelength can be then calculated according to
+$\lambda = \frac{c}{f}$, where $c$ is the speed of light and $f$ is the
 transmission frequency, giving a transmission wavelength of about 9.99~mm.
 Propagation delay is a simple function of distance and the speed of light. The
 input of the physics engine is a time $t$ from some preset initial conditions
@@ -190,19 +201,19 @@ which outputs the state of all entities.
 
 \subsection{Network Simulation}
 
-We used NS-3~\cite{ns-3} to implement a simulation of this network. Our final design
-consisted of a set of routers representing the different entities in our physics
-simulation which were each linked to every other router using a point-to-point
-channel. Essentially, this allowed us to have a wired network with configurable
-delay and error along with the ability to take certain channels down if they are
-obstructed that we could make behave like an interplanetary network would
-without having to deal with the complexities of configuring wireless
-communication. In addition to the mesh of routers, we added two individual nodes
-to the network with zero delay that can be connected to any one router in the
-network. One of these two nodes acts as a sender and the other one acts as a
-receiver. This configuration of sender and receiver as separate nodes made it
-easier to decouple the applications from the network topology and allowed us to
-programatically create arbitrary topologies.
+We used NS-3~\cite{ns-3} to implement a simulation of this network. Our final
+design consisted of a set of routers representing the different entities in our
+physics simulation which were each linked to every other router using a
+point-to-point channel. Essentially, this allowed us to have a wired network
+with configurable delay and error along with the ability to take certain
+channels down if they are obstructed that we could make behave like an
+interplanetary network would without having to deal with the complexities of
+configuring wireless communication. In addition to the mesh of routers, we added
+two individual nodes to the network with zero delay that can be connected to any
+one router in the network. One of these two nodes acts as a sender and the other
+one acts as a receiver. This configuration of sender and receiver as separate
+nodes made it easier to decouple the applications from the network topology and
+allowed us to programatically create arbitrary topologies.
 
 NS-3 is a useful library, but we did run into a number of problems over the
 course of our implementation of our simulation. The first problem came when we
