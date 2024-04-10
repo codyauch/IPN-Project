@@ -184,5 +184,5 @@ def save_dataframe():
 
 # for testing
 save_dataframe()
-get_graphs()
+# get_graphs()
 get_statistics()
