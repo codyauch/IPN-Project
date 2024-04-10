@@ -3,6 +3,8 @@
 \usepackage{microtype}
 \usepackage{biblatex}
 \usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{amsmath}
 
 \addbibresource{paper.bib}
 
@@ -19,14 +21,15 @@
 \begin{abstract}
   This paper discusses interplanetary networks, the challenges that can arise
   from them that make them a unique challenge compared to shorter-range computer
-  networks, and the protocols that can be used in this type of network. In
+  networks, and how our current network protocols can be applied in this application. In
   addition, we look at how one can use conventional network simulators to test
   interplanetary network implementations. We used the network simulator
-  NS-3~\cite{ns-3} to test various transport layer protocols against each other
+  NS-3 ~\cite{ns-3} to test various transport layer protocols against each other
   in a network topology that we designed in the network simulator to emulate
   long-distance communications. Using this network simulation, we were able to
   compare UDP, TCP, and TCP New Reno protocols against each other to see how
-  they each performed across such large distances with high delays.
+  they each performed across such large distances with high delays. UDP preformed the 
+  best with New Reno and TCP closely paired together.
 \end{abstract}
 
 \section{Introduction}
@@ -54,13 +57,13 @@ very relevant to investigate these issues well before they are needed.
 
 In their 2017 Masters Thesis, Md Monjurul Islam Khan~\cite{Khan2017} from
 University of Manitoba wrote on how to create a satellite network simulation
-based on ns3. They used a point to point ns3 module to create a network of 2
+based on NS-3. They used a point to point NS-3 module to create a network of 2
 levels of orbiting satellites and fixed points on the earth which acts as
 uplinks to the network. The paper analyzed TCP HighSpeed against TCP Vegas slow
 start. However this paper stops at expanding the network beyond earth orbit, and
 rather focuses on Earth orbit communication.
 
-SNS3 is a simulation library which uses NS3 as a basis to create a framework
+SNS3 is a simulation library which uses NS-3 as a basis to create a framework
 which to build simulations for geostationary satellites in the European
 continent. It does not expand to an interplanetary network~\cite{Puttonen2014}.
 
@@ -85,28 +88,30 @@ Both of these limit themselves to earth orbit simulations.
 \section{Interplanetary Internet and Background}
 
 An interplanetary network is simply a network which where the nodes are
-distributed across the surface or orbits of different planets. In the year of
-2024 the current interplanetary is limited to Mars, Earth, the Moon, and
+distributed across the surface or in the orbits of different planets or other celestial objects.
+In the year of
+2024 the current interplanetary is limited to Mars, Earth, Earth orbit, Moon orbit, and
 satellites orbiting the sun. The interplanetary network is also expanded to deep
-space satellites, like the voyager probes. A sample message path across the
-network could be that a message is passed from a on earth station through
-satellite dish to a earth orbiting satellite, then when it has direct line of
-sight with the Mars MAVEN sends the message. MAVEN then relays the message to a
+space satellites, like the Voyager probes. A sample message path across the
+network could be that a message is passed from a large network antenna on earth
+to a earth orbiting satellite, then when it has direct line of
+sight with MAVEN (a satellite orbiting mars) it sends the message. MAVEN then relays the message to a
 Mars rover like Odyssey. This description hides the complexity which arises in
-an interplanetary network.
+an interplanetary network which may seem like a extremely simple network.
 
-In a traditional network a majority of the network will happen over a wired
-connection. This means that the error is relatively low. This is no longer the
+In a traditional network a majority of the network traffic will occur over a wired
+connection, especially for transfers of large amounts of data.
+This means that the error is relatively low. This is no longer the
 case in the case of satellites sending messages over potentially millions of
 kilometers. Atmosphere in the Earth orbit, solar radiation, and dust cause
 increased error in sending the message between entities. Inverse square law
 dictates that over these large periods the energy needed to send the message so
 that it can be read at its destination. Even the Doppler effect is needed to be
-accounted for to tune into radio frequencies on the ISS. High error means that
+accounted for to tune into radio frequencies on the ISS. ~\cite{qslCompensatingDoppler} High error means that
 sending a message can no longer be assumed to be sent reliably and has to be
 compensated for. Beyond high error, large distances between entities and the
 physical limitation that messages cannot travel faster than the speed of light.
-Light, or any other energy takes 8 minutes to get from the Sun to Earth, and
+Light, or any other energy takes approximately 8 minutes to get from the Sun to Earth, ~\cite{nasa_earth} and
 thus for a round trip will take 16 minutes to complete a simple handshake, given
 that the messages were sent correctly.
 
@@ -114,10 +119,17 @@ Other than physical limitations a interplanetary network has a rapidly changing
 topology at anytime. For instance satellites which orbit planets can have their
 field of view blocked as they move over the horizon. While terrestrial networks
 also have rapidly changing networks at the edges, but the difference is that the
-core of the network is stable traditionally. Where depending on the hour, day,
+core of the network is often stable. Where depending on the hour, day,
 year, the core of the interplanetary network can change drastically. To be able
 to connect to the network there are no well known places to access the network,
 except for Earth.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\textwidth]{media/ipn.png}
+  \caption{A sample of the current interplanetary network}
+\end{figure}
+
 
 To combat these challenges several protocols have been created. The SCPS TP is a
 transport protocol which is used on the network layer. UDP is used in the lowest
@@ -126,16 +138,17 @@ conditions. When a reliable and efficient method of network transportation is
 needed, then SCPS TP is used. It is a modified version of TCP which uses a slow
 start protocol, reduced handshakes, reliable data transfer with reduced
 confirmations. Other protocols like store and load, and Licklider are used to
-also overcome these problems.
+also overcome these problems. In this paper since no complete implementation of 
+SCPS TP has been created for NS-3, New Reno TCP was used instead.
 
 The rest of the paper remains to simulate these unique challenges, as well as
-see in what conditions do the current protocols work.
+see how protocols operate at these different situations.
 
 \section{Methodology}
 
 \subsection{Physics Engine}
 
-A significant challenge in creating a IPN is the rapidly changing topology. To
+A significant challenge in modeling a IPN is modeling the rapidly changing topology. To
 simulate these rapid changing conditions a physics engine was created to model
 the orbits of several entities in the solar system. Several assumptions were
 made in the simulator for the sake of simplicity as the goal of the simulator is
@@ -143,12 +156,14 @@ not to create a perfect model of the solar system and the entities inside of the
 solar system, but rather conditions which a IPN would exist in.
 
 The first assumption made was that all orbits are circular. Realistically,
-orbits are oval shaped, with the two focal points. A result of this assumption
+orbits are oval shaped, with two focal points. A result of this assumption
 is the elimination of any difference in orbital speed due to Kepler's third law.
+Normally a planet will accelerate or decelerate depending on where it is in 
+its orbit around the sun. 
 The orbital radius was chosen by taking the average orbital radius of the real
 life celestial bodies. For example Earth's average orbital radius is 149.6
 billion meters~\cite{nasa_earth}, and therefore orbits around the sun in a
-circular orbit of radius 149.6 billion meters. Another result of this assumption
+circular orbit of radius 149.6 billion meters in our model. Another result of this assumption
 is that orbits are considered to be centered around the body which it orbits.
 The Mars orbit has a focal point that is further in space, making it more oval
 shaped than the earth orbit.~\cite{nasa_mars} While this could make changes to a
@@ -173,7 +188,7 @@ Messages between entities were assumed to be sent at the speed of light in a
 vacuum, as all forms of radio, lasers, or other wireless messages are forms of
 electromagnetic radiation, and thus travel at the speed of light. Since the
 propagation delay in an IPN is much higher than in terrestrial networks, other
-delays such as queuing or processing delays were ignored as being negligible.
+delays such as processing delays were ignored as being negligible.
 
 Based on these simplifications, a physical simulation with several goals. To
 calculate if a line of sight could be made between two communicating entities,
@@ -195,9 +210,19 @@ GHz)\cite{Morabito_Hastrup} we opted to use a transmission frequency of 30Ghz.
 The transmission wavelength can be then calculated according to
 $\lambda = \frac{c}{f}$, where $c$ is the speed of light and $f$ is the
 transmission frequency, giving a transmission wavelength of about 9.99~mm.
-Propagation delay is a simple function of distance and the speed of light. The
-input of the physics engine is a time $t$ from some preset initial conditions
-which outputs the state of all entities.
+Propagation delay is a simple function of distance and the speed of light.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.4\textwidth]{media/sun_orbit.png}
+  \includegraphics[width=0.4\textwidth]{media/moon_orbit.png}
+  \caption{A visual output of the physics model. Left: Mars and Earth orbiting the sun. Right: The ISS (overlapping the center) and the Moon orbiting the Earth}
+\end{figure}
+
+The physics simulation modeled the Sun, Earth, Moon, International Space Station,
+Mars, and the Mars Orbiter. All were able to connect to the network except for the 
+the Sun and the Moon. The input of the physics engine is a time $t$ from some preset initial conditions
+which outputs the state of all entities. Which is fed into the NS-3 simulation.
 
 \subsection{Network Simulation}
 
@@ -275,6 +300,88 @@ a version of our program using the New Reno variant of TCP. Thankfully, NS-3
 made this easy for us. It worked perfectly after assigning a configuration value
 before setting up our communication channels.
 
-\printbibliography{}
+During the work on this project we contributed to the open source NS-3 project 
+by committing a change to fix a bug which occurred when running the program on 
+different operating systems.
+
+\section{Data}
+The NS-3 simulation ran on the basis of transferring data between Earth and 
+Mars.
+
+Data was scraped from the trace output that was generated while running the 
+ns3 simulation. Trace data was given when a message was queued, dequeued, 
+and received at the destination. This data also included the amount of 
+data being sent in bytes. There is other data on the messages being sent, but 
+was not tracked for the purpose of this project. The trace data was parsed 
+using regex expressions to extract the needed numbers from the string.
+This data was then fed into a pandas dataframe. A unique id had to be 
+generated for each message since once a message was recieved the id was 
+reused. This was done by tracking when each message was received with id 
+$x$ and after incrementing a number by one, say $y$. The unique id was then 
+created by hashing $xy$. Once the data frame was created it had to be merged 
+on itself to have one row of the dataframe represent exactly one message rather 
+then one row be either queue, dequeue, or received.
+
+Time from being queued to received, time being queued, and message time in transit
+were all calculated based off of the data. 
+
+\[\text{total\_package\_time} = \text{time\_recieved} - \text{time\_queued}\]
+
+\[\text{time\_queued} = \text{time\_dequeued} - \text{time\_queued}\]
+
+\[\text{total\_time} = \text{time\_received} - \text{time\_dequeued}\]
+
+After the data was processed it was saved in a csv file with one row representing 
+exactly one message that was sent over the network. This file was close to 
+2.5 GB in size.
+
+Statistics were calculated on the entire column of the calculated rows, and 
+bytes sent. Messages were also grouped together which occurred during a similar 
+time window and further averages were calculated to find how the average changed 
+over time of the simulation. These calculations are shown in the graphs in the 
+analysis section.
+
+\section{Analysis}
+
+\subsection{UDP}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.4\textwidth]{media/udp.png}
+  \includegraphics[width=0.4\textwidth]{media/udp_data.png}
+  \caption{UDP analyzed}
+\end{figure}
+
+UDP had an average time from being queued to received of
+195.4 seconds, an average time being queued of
+18.36 seconds, and an average message time in transit
+177.0 seconds. The average amount of data sent was 
+1051.6 bytes. Notice the scientific notation in the 
+corner of the graph. The graph shows a large amount of 
+sensitivity to the motion of the planets which can be 
+seen by the curvature of the graph. At time around 28000
+seconds, the topology suddenly changed. Caused by a satellite
+blocking the path between Mars and Earth. This caused a secondary, 
+less efficient path to be taken. This shows why there are several 
+"layers" of time which it took. They likely represent the different paths 
+which the message took before being sent to its destination. Each quanta in
+the time it took to complete the message 
+represents the smaller jump it takes to get from a satellite to its 
+orbiting entity. The increase in time likely represents that while the 
+direct Earth and Mars link was down the smaller satellites were actually orbiting 
+away from the message destination.
+
+\subsection{TCP}
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.4\textwidth]{media/tcp.png}
+  \includegraphics[width=0.4\textwidth]{media/tcp_data.png}
+  \caption{UDP analyzed}
+\end{figure}
+
+
+
+\printbibliography
 
 \end{document}
