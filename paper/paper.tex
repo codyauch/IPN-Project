@@ -9,7 +9,7 @@
 \addbibresource{paper.bib}
 
 \title{Simulating an Interplanetary Internet}
-\author{Cody Auch, Mark Lysack, Jacob Janzen}
+\author{Cody Auch, Jacob Janzen, Mark Lysack}
 \date{\today}
 
 \newcommand{\CC}{C\nolinebreak\hspace{-.05em}\raisebox{.4ex}{\tiny\bf
@@ -25,12 +25,17 @@
   networks, and how our current network protocols can be applied in this
   application. In addition, we look at how one can use conventional network
   simulators to test interplanetary network implementations. We used the network
-  simulator NS-3 ~\cite{ns-3} to test various transport layer protocols against
+  simulator NS-3~\cite{ns-3} to test various transport layer protocols against
   each other in a network topology that we designed in the network simulator to
   emulate long-distance communications. Using this network simulation, we were
   able to compare UDP, TCP, and TCP New Reno protocols against each other to see
   how they each performed across such large distances with high delays. UDP
   preformed the best with New Reno and TCP closely paired together.
+
+  Our implementation can be found
+  at \url{https://github.com/codyauch/IPN-Project}. The physics simulation was
+  mostly designed by Mark and Cody. The network simulation in NS-3 was done by
+  Jacob, and the analysis was done by Mark.
 \end{abstract}
 
 \section{Introduction}
@@ -159,7 +164,7 @@ exist in.
 
 The first assumption made was that all orbits are circular. Realistically,
 orbits are oval shaped, with two focal points. A result of this assumption is
-the elimination of any difference in orbital speed due to Kepler's third law.
+the elimination of any difference in orbital speed due to Kepler's second law.
 Normally a planet will accelerate or decelerate depending on where it is in its
 orbit around the sun. The orbital radius was chosen by taking the average
 orbital radius of the real life celestial bodies. For example Earth's average
@@ -361,22 +366,7 @@ average time being queued of 21.92 seconds, and an average message time in
 transit 261.72 seconds. The average amount of data sent was 1052.0 bytes. Notice
 the scientific notation in the corner of the graph.
 
-The graph shows a large amount of sensitivity to the motion of the planets which
-can be seen by the curvature of the graph. At time around 28000 seconds, the
-topology suddenly changed. Caused by a satellite blocking the path between Mars
-and Earth. This caused a secondary, less efficient path to be taken. This shows
-why there are several ``layers'' of time which it took. They likely represent the
-different paths which the message took before being sent to its destination.
-Each quanta in the time it took to complete the message represents the smaller
-jump it takes to get from a satellite to its orbiting entity. The increase in
-time likely represents that while the direct Earth and Mars link was down the
-smaller satellites were actually orbiting away from the message destination. UDP
-messages spent much more time being queued than the other messages. This may
-imply that messages were being transferred back and forth between two closely
-orbiting objects, which could explain the many different layers which it can
-take for a message to be sent. It could also be that since the average message
-is larger than TCP or New Reno it takes longer for the message to be sent and it
-is transmitting.
+We believe that UDP sends a large number of messages at the start that are all queued, processed, and sent. After those messages are sent, the next batch is prepared immediately. This curve could be caused by the queuing delay from the large number of messages that are sent. UDP does not wait for messages to be received and will therefore create a large backlog which slows everything down when dequeuing messages.
 
 \subsection{TCP}
 
