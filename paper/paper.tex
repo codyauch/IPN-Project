@@ -197,7 +197,7 @@ message, and to calculate the message propagation delay for the message to be
 sent. Line of sight was achieved using simple geometry calculations. (See
 appendix) All entities are able to block signals if the ray passes through the
 radius of the entity. One of the largest factors contributing to transmission
-error is the distance travelled by the electromagnetic signal between
+error is the distance traveled by the electromagnetic signal between
 transmitting and receiving nodes. By generalizing Friis' transmission
 formula\cite{Friis} for isotropic emitters and receivers, we can obtain the
 ratio of signal intensity received to signal intensity transmitted, known as
@@ -238,7 +238,7 @@ two individual nodes to the network with zero delay that can be connected to any
 one router in the network. One of these two nodes acts as a sender and the other
 one acts as a receiver. This configuration of sender and receiver as separate
 nodes made it easier to decouple the applications from the network topology and
-allowed us to programatically create arbitrary topologies.
+allowed us to programmatically create arbitrary topologies.
 
 NS-3 is a useful library, but we did run into a number of problems over the
 course of our implementation of our simulation. The first problem came when we
@@ -315,7 +315,7 @@ data being sent in bytes. There is other data on the messages being sent, but
 was not tracked for the purpose of this project. The trace data was parsed 
 using regex expressions to extract the needed numbers from the string.
 This data was then fed into a pandas dataframe. A unique id had to be 
-generated for each message since once a message was recieved the id was 
+generated for each message since once a message was received the id was 
 reused. This was done by tracking when each message was received with id 
 $x$ and after incrementing a number by one, say $y$. The unique id was then 
 created by hashing $xy$. Once the data frame was created it had to be merged 
@@ -352,12 +352,23 @@ analysis section.
   \caption{UDP analyzed}
 \end{figure}
 
-UDP had an average time from being queued to received of
-195.4 seconds, an average time being queued of
-18.36 seconds, and an average message time in transit
-177.0 seconds. The average amount of data sent was 
-1051.6 bytes. Notice the scientific notation in the 
-corner of the graph. The graph shows a large amount of 
+% UDP had an average time from being queued to received of
+% 195.4 seconds, an average time being queued of
+% 18.36 seconds, and an average message time in transit
+% 177.0 seconds. 
+
+
+The average amount of data sent was 
+1051.6 bytes. The number of bytes 
+Notice the scientific notation in the 
+corner of the graph. 
+
+% remove this line if stats are re-calculated
+The average time that a message was in transit was close to 216 seconds.
+The time spent waiting in queue was 0.094\% of the time it took for a message to completely 
+transmit. 
+
+The graph shows a large amount of 
 sensitivity to the motion of the planets which can be 
 seen by the curvature of the graph. At time around 28000
 seconds, the topology suddenly changed. Caused by a satellite
@@ -369,7 +380,12 @@ the time it took to complete the message
 represents the smaller jump it takes to get from a satellite to its 
 orbiting entity. The increase in time likely represents that while the 
 direct Earth and Mars link was down the smaller satellites were actually orbiting 
-away from the message destination.
+away from the message destination. UDP messages spent much more time being queued than 
+the other messages. This may imply that messages were being transferred back and forth 
+between two closely orbiting objects, which could explain the many different layers 
+which it can take for a message to be sent. It could also be that since the average 
+message is larger than TCP or New Reno it takes longer for the message to be sent 
+and it is transmitting. 
 
 \subsection{TCP}
 
@@ -377,10 +393,113 @@ away from the message destination.
   \centering
   \includegraphics[width=0.4\textwidth]{media/tcp.png}
   \includegraphics[width=0.4\textwidth]{media/tcp_data.png}
-  \caption{UDP analyzed}
+  \caption{TCP analyzed}
 \end{figure}
 
+The average amount of bytes transferred is 394 bytes. This is likely from 
+the difference in the amounts of bytes transferred in an ACK message compared 
+to when data is being sent.
 
+
+
+Unlike in UDP the motion of the planets is not observable in the graph. However this is 
+because there are several different paths which the TCP message could have taken which can be seen. 
+Since TCP requires a higher amount of base time to establish a connection compared to UDP, this 
+means that when it "hops" between entities it adds a larger base time. 
+
+At the start of the time we can see 4 separate paths. This would be the different times that it would take 
+for any of the 4 paths between Earth and Mars, that is Earth to the ISS to the Mars Orbiter then to Mars,
+Earth to the Mars Orbiter to Mars, Earth to the ISS to Mars, and finally Earth to Mars. After one of the 
+entities is blocking a direct signal it becomes only that 3 of these options possible, with likely only two actual 
+paths being viable. With less available 
+bandwidth it becomes slower on average. Smaller time may also be correlated to the minority of messages which were
+sent with a smaller message size. 
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.4\textwidth]{media/tcp_future.png}
+  \includegraphics[width=0.4\textwidth]{media/tcp_future_data.png}
+  \caption{TCP in the future analyzed}
+\end{figure}
+
+The second set of graphs show TCP in some time in the future. We can see that the time that messages
+take to transfer does in fact change over time as the entities change distances. We can also see a similar
+pattern of behaviour changing as some topology changes in the model. 
+
+\subsection{New Reno}
+
+New Reno, a modified version of TCP used to help elevate congestion ~\cite{Nahar2016}, was used 
+in place of SCP TP. New Reno behaved very similar to TCP. Its average data 
+transfer was 407.5 bytes. 
+
+It preformed marginally better in its time from being queued to the message received. This 
+was mostly due to a decrease in time that it was in queue, which is to be expected. There was 
+a very marginal increase in time in transit however. 
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=0.4\textwidth]{media/new_reno.png}
+  \includegraphics[width=0.4\textwidth]{media/new_reno_data.png}
+  \caption{TCP in the future analyzed}
+\end{figure}
+
+Similar to TCP we can see the two stages which occur in the simulation. One where most of 
+the messages were likely being routed from directly from Earth to Mars, which then gets transformed 
+into having to route through one of the external satellites orbiting each entity, which decreases the 
+average time it takes to transmit the message.
+
+\subsection{Protocol Comparison}
+
+Since a large amount of propagation delay dominates the amount of time that it takes for messages total 
+transmit time from being queued to being received at the appropriate node, other increases in performance 
+mean only a slight decrease in time sending the message. An important statistic to pay attention to is that 
+UDP almost always sent a message with a size of 1052 bytes. This means that even though TCP, New Reno, and 
+UDP had sent a similar number of messages, the actual throughput for UDP was significantly higher, which 
+is much more significant in an IPN situation. In the data graphs we can see that not only was the maximum 
+data being sent was less than UDP, but also had to send messages of very little size, most likely acknowledgements,
+as well. New Reno was seen to improve on the queuing time compared to both TCP and UDP. Which would mean in a 
+high reliability situation and in situations where higher traffic is sent through a network with a relatively low 
+bandwidth, like a IPN, where satellites are limited by how much data they can transmit, New Reno's effect can be 
+more significant. This should only be used in a connection where propagation delay is less of an issue like 
+between planet and satellite communication. Queuing time in UDP took a more significant percentage of its 
+time than both TCP and New Reno. In general however, UDP is the best option for primary communication between 
+Mars and Earth communication. 
+
+\section{Future Work}
+
+Future work that could be done would be to implement or partially implement SCP TP as a network 
+protocol which could be used and compared to the protocols analyzed in this paper. Other protocols 
+like the Linklider or load and store protocols could also be implemented, to create a more realistic 
+IPN. 
+
+The physics engine could be expanded to included 3D orbits, particularly around planets, where networks of 
+satellites could be created to create a proper level of communication that is maintained today, with geocentric 
+and polar orbiting satellites. Connection points from a planet to off the planet could have a direction which it 
+needs to send a message in for it to be able to connect. For example a rover on Mars in our simulation could technically 
+send a message in any direction, even if they were sending it through the surface of the planet.The error model in 
+the physics engine could be expanded to include interference like solar radiation, atmosphere, and other interference. 
+
+Other stats could be extracted from the NS-3 model such as packet loss, message path, handshake time. It could expand 
+so that the network was not just focused on Earth to Mars communication. It could be expanded to include other celestial 
+objects in the solar system, as well as potential future objects. 
+
+The NS-3 simulation could dynamically choose the network protocol to use based on the level of error, message size,
+estimated propagation error, and other factors. This could build a model which uses not only one protocol but all of them 
+and leverages the advantages of each when it is necessary. This combined with a more sophisticated model of the solar 
+system would create a very competent simulation of the current operation of the IPN, and could then be expanded or tweaked 
+to find if expansions to it could be handled properly. This would need a combination of all of the suggestions above 
+to be successful.
+
+\section{Conclusion}
+
+In this paper we outlined how we created a model of an interplanetary internet (IPN) using a physics engine which fed into 
+a NS-3 simulation. The physics simulation used a simplified model of orbiting planets and satellites as well as physics calculations 
+to create data which would be the output for any input time $t$. The NS-3 model used a point to point base which programmatically
+took the data from the physics engine and created nodes which acted as routers. A simulation was ran which transfered data between 
+Earth and Mars, using satellites and other entities to relay messages around blocked connections. Analysis was done on three
+different network protocols used in the IPN, that is UDP, TCP and New Reno. 
+UDP was found to have the most throughput out of all of the three protocols, while New Reno reduced the amount of time a message 
+was queued. 
 
 \printbibliography
 
